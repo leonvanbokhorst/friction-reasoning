@@ -5,50 +5,103 @@ import json
 import random
 import time
 import traceback
+import os
 from typing import List, Dict, Tuple
 from pathlib import Path
 from tqdm import tqdm
 from statistics import mean, median
+from dotenv import load_dotenv
+from huggingface_hub import HfApi
+from datasets import Dataset, load_dataset
 
 from ..llm import LLMClient
 from ..demo import Agent, generate_agent_reasoning, synthesize_final_answer
+from .upload import upload_to_hub
+
+# Load environment variables
+load_dotenv()
 
 # Base prompts that can be combined and modified
 BASE_PROMPTS = {
     "emotional": [
-        "Why do I feel...",
-        "Sometimes when I'm alone...",
-        "I can't stop thinking about...",
-        "Do you ever get that feeling when...",
-        "It's weird but lately...",
+        "Ugh, my heart's doing that thing again where...",
+        "Just had one of those moments where everything inside me...",
+        "Why does my brain always pick 3am to...",
+        "Trying to breathe through this feeling of...",
+        "Anyone else get randomly blindsided by...",
+        "My therapist would probably say it's because...",
+        "Funny how your body tells you things like...",
+        "That moment when your emotions just...",
     ],
-    "philosophical": [
-        "What if consciousness is...",
-        "Maybe reality isn't...",
-        "I keep wondering about time and...",
-        "The universe makes me feel...",
-        "Ever think about how small we are...",
+    "relationships": [
+        "Saw their name pop up and my stomach just...",
+        "Why do we keep dancing around this thing where...",
+        "Text conversations hit different when...",
+        "Kinda hurts how some people just casually...",
+        "Getting tired of being the friend who always...",
+        "Maybe I'm toxic for thinking this but...",
+        "The way they looked at me made me wonder if...",
+        "Starting to notice a pattern in how I...",
     ],
-    "social": [
-        "Why do people always...",
-        "Is it normal when friends...",
-        "Social media makes me...",
-        "Dating these days feels...",
-        "Family gatherings are so...",
+    "identity": [
+        "Okay but who even am I when nobody's...",
+        "Getting real with myself about how I might be...",
+        "Lowkey freaking out about becoming...",
+        "Used to think I was the type of person who...",
+        "Trying on different versions of myself like...",
+        "Keep catching glimpses of who I could be if...",
+        "What if this isn't even my real personality but...",
+        "The gap between who I am online and offline...",
     ],
     "existential": [
-        "Sometimes I question if...",
-        "What's the point of...",
-        "Life feels like a...",
-        "Does anyone else worry about...",
-        "I'm scared that maybe...",
+        "3am thoughts hitting different like...",
+        "Do you ever just stop and get scared about...",
+        "Having an existential crisis about how we...",
+        "My brain broke a little thinking about how...",
+        "Kinda terrifying how we're all just...",
+        "Getting lost in the void thinking about...",
+        "Reality feels glitchy when you realize...",
+        "Trying to process how we're all just...",
+    ],
+    "society": [
+        "Is anyone else exhausted by how we're all...",
+        "The way social media makes us think we need to...",
+        "Getting weird vibes from how everyone's...",
+        "Can we talk about this pressure to always...",
+        "Why are we all pretending it's normal to...",
+        "The algorithm knows me better than my friends and...",
+        "Society really got us thinking we gotta...",
+        "Living through *gestures at everything* while...",
+    ],
+    "growth": [
+        "Oof, just caught myself doing that thing where...",
+        "Past me would be shook seeing me now...",
+        "Having to unlearn so much about how I...",
+        "Growing pains hit different when you're...",
+        "Plot twist: maybe I was the toxic one when...",
+        "Healing is weird because suddenly you're...",
+        "That moment when you realize you're becoming...",
+        "Kind of scary how much I've changed since...",
     ],
     "memory": [
-        "Remember when we used to...",
-        "Childhood memories make me...",
-        "Looking back at photos...",
-        "That song reminds me...",
-        "Growing up, I always...",
+        "Brain randomly decided to replay that time...",
+        "A song came on and suddenly I'm back in...",
+        "Memory unlocked: that random moment when...",
+        "Why do I keep thinking about that one time...",
+        "Getting emotional about how we used to...",
+        "Found an old photo and now I'm spiraling about...",
+        "That core memory just resurfaced where...",
+        "Weird how your mind suddenly throws you back to...",
+    ],
+    "dreams": [
+        "Lowkey manifesting a reality where...",
+        "Living in my head rent free: that scenario where...",
+        "Daydreaming again about how life could be if...",
+        "Anyone else build entire futures around...",
+        "Stuck between wanting to dream big and...",
+        "In my imaginary perfect life I'm always...",
+        "Keep fantasizing about dropping everything to...",
+        "That alternate timeline where I actually...",
     ]
 }
 
@@ -58,10 +111,10 @@ EMOTIONS = [
     "overwhelmed", "peaceful", "restless", "grateful", "uncertain",
     "frustrated", "excited", "sad", "happy", "angry", "bored", "sleepy",
     "hungry", "thirsty", "tired", "sick", "happy", "sad", "angry", "bored",
-    "sleepy", "hungry", "thirsty", "tired", "sick"
+    "sleepy", "hungry", "thirsty", "tired", "sick", 
 ]
 
-def generate_question(llm: LLMClient) -> str:
+async def generate_question(llm: LLMClient) -> str:
     """Generate a unique, emotionally resonant question."""
     # Pick random category and base prompt
     category = random.choice(list(BASE_PROMPTS.keys()))
@@ -72,10 +125,11 @@ def generate_question(llm: LLMClient) -> str:
 
 Rules:
 - Must feel deeply personal and emotional
+- Sometimes change the start of the question to start with "So" or "You" or "Well"
 - Use very casual, human-like language
 - Make it feel unfinished/uncertain
-- Maximum 21 words
-- Can be a statement that implies a question
+- Maximum 32 words
+- Can be a statement that implies a question or a question to the AI
 - Sometimes end with ... or similar trailing off
 Examples:
 "Sometimes I look at old photos and just... y'know?"
@@ -83,8 +137,8 @@ Examples:
 "Been thinking about my childhood room lately and..."
 """
     
-    llm.temperature = random.uniform(0.7, 1.0)  # High creativity for variety
-    response = llm.complete(prompt)
+    llm.temperature = random.uniform(0.5, 0.8)  # High creativity for variety
+    response = await llm.complete(prompt)
     
     # Clean up the response
     response = response.strip()
@@ -161,7 +215,7 @@ async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats)
         previous_thoughts = ""
         
         for agent in agents:
-            result = generate_agent_reasoning(llm, question, agent, previous_thoughts)
+            result = await generate_agent_reasoning(llm, question, agent, previous_thoughts)
             agent_responses.append(result)
             previous_thoughts = "\n".join(
                 resp["thinking_pattern"]["raw_thought_stream"]
@@ -169,7 +223,7 @@ async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats)
             )
         
         # Generate final synthesis
-        final_answer = synthesize_final_answer(llm, question, agent_responses)
+        final_answer = await synthesize_final_answer(llm, question, agent_responses)
         
         # Structure the datapoint
         datapoint = {
@@ -199,7 +253,44 @@ async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats)
         stats.add_error(error_msg, -1)  # -1 as batch number not known here
         raise
 
-async def generate_dataset(num_examples: int = 1000, batch_size: int = 3) -> List[Dict]:
+async def generate_batch(
+    llm: LLMClient, 
+    batch_size: int, 
+    stats: DatasetStats, 
+    seen_ids: set
+) -> List[Dict]:
+    """Generate a batch of examples concurrently."""
+    # First generate all questions concurrently
+    question_tasks = [generate_question(llm) for _ in range(batch_size)]
+    questions = await asyncio.gather(*question_tasks, return_exceptions=True)
+    
+    # Filter out any failed question generations
+    valid_questions = [q for q in questions if not isinstance(q, Exception)]
+    
+    # Process examples concurrently
+    datapoint_tasks = [
+        generate_datapoint(llm, question, stats)
+        for question in valid_questions
+    ]
+    
+    # Gather results, filtering out any failed generations
+    results = []
+    completed = await asyncio.gather(*datapoint_tasks, return_exceptions=True)
+    
+    for datapoint in completed:
+        if isinstance(datapoint, Exception):
+            stats.add_error(str(datapoint), -1)
+            continue
+            
+        # Ensure unique ID
+        while datapoint["id"] in seen_ids:
+            datapoint["id"] = str(int(time.time() * 1000))
+        seen_ids.add(datapoint["id"])
+        results.append(datapoint)
+    
+    return results
+
+async def generate_dataset(num_examples: int = 1200, batch_size: int = 10) -> List[Dict]:
     """Generate the full dataset in batches."""
     llm = LLMClient(model="gpt-4o", temperature=0.7)
     dataset = []
@@ -226,37 +317,31 @@ async def generate_dataset(num_examples: int = 1000, batch_size: int = 3) -> Lis
                         datapoint = json.loads(line)
                         seen_ids.add(datapoint["id"])
                         dataset.append(datapoint)
+                        stats.add_datapoint(datapoint)  # Update stats with existing data
                     except json.JSONDecodeError:
                         print(f"Warning: Skipping invalid JSON in {batch_file}")
         print(f"Loaded {len(dataset)} existing examples")
     
+    # If we already have enough examples, return early
+    if len(dataset) >= num_examples:
+        print("\nTarget number of examples already generated.")
+        stats.print_summary()
+        return dataset
+        
     # Generate in batches with progress bar
     with tqdm(total=num_examples, initial=len(dataset)) as pbar:
         batch_num = next_batch_num
         while len(dataset) < num_examples:
             try:
-                batch = []
                 current_batch_file = output_dir / f"batch_{batch_num}.jsonl"
                 
-                # Generate batch
-                for _ in range(min(batch_size, num_examples - len(dataset))):
-                    try:
-                        # Generate unique question and datapoint
-                        question = generate_question(llm)
-                        datapoint = await generate_datapoint(llm, question, stats)
-                        
-                        # Ensure unique ID
-                        while datapoint["id"] in seen_ids:
-                            datapoint["id"] = str(int(time.time() * 1000))
-                        seen_ids.add(datapoint["id"])
-                        
-                        batch.append(datapoint)
-                    except Exception as e:
-                        error_msg = f"{type(e).__name__}: {str(e)}"
-                        stats.add_error(error_msg, batch_num)
-                        print(f"\nError in example generation: {error_msg}")
-                        print("Continuing with next example...")
-                        continue
+                # Generate batch concurrently
+                batch = await generate_batch(
+                    llm, 
+                    min(batch_size, num_examples - len(dataset)),
+                    stats,
+                    seen_ids
+                )
                 
                 if batch:  # Only save if we have data
                     # Save batch (overwrite instead of append)
@@ -298,16 +383,24 @@ async def generate_dataset(num_examples: int = 1000, batch_size: int = 3) -> Lis
     return dataset
 
 async def main():
-    """Generate the dataset."""
-    print("\nGenerating 1000 examples in small batches of 3...")
+    """Generate the dataset and upload to HuggingFace Hub."""
+    print("\nGenerating 1200 examples in small batches of 10...")
     try:
-        await generate_dataset(num_examples=1000, batch_size=3)
+        dataset = await generate_dataset(num_examples=1200, batch_size=10)
         print("\nDataset generation complete.")
+        
+        # Upload to HuggingFace Hub
+        dataset_path = "data/friction_reasoning/friction_reasoning_dataset.jsonl"
+        print("\nUploading dataset to Hugging Face Hub...")
+        await upload_to_hub(
+            dataset_path=dataset_path,
+            description="A dataset of multi-agent reasoning examples with designed friction points, capturing stream-of-consciousness thoughts and cognitive processes."
+        )
     except Exception as e:
-        print(f"\nFatal error in dataset generation: {type(e).__name__}: {str(e)}")
+        print(f"\nFatal error in dataset generation/upload: {type(e).__name__}: {str(e)}")
         print("\nStacktrace:")
         traceback.print_exc()
-        print("\nDataset generation failed.")
+        print("\nOperation failed.")
 
 if __name__ == "__main__":
     asyncio.run(main()) 

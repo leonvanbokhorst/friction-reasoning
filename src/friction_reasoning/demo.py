@@ -30,7 +30,7 @@ class Agent:
             }
         }
 
-def generate_agent_reasoning(llm: LLMClient, question: str, agent: Agent, previous_thoughts: str = "") -> Dict[str, Any]:
+async def generate_agent_reasoning(llm: LLMClient, question: str, agent: Agent, previous_thoughts: str = "") -> Dict[str, Any]:
     """Generate authentic stream-of-consciousness reasoning."""
     prompt = get_agent_prompt(
         agent.agent_type, 
@@ -38,8 +38,8 @@ def generate_agent_reasoning(llm: LLMClient, question: str, agent: Agent, previo
         agent.thought_patterns[agent.agent_type],
         previous_thoughts
     )
-    llm.temperature = random.uniform(0.7, 1.0)
-    response = llm.complete(prompt)
+    llm.temperature = random.uniform(0.7, 1.0)  # High creativity for variety
+    response = await llm.complete(prompt)
     
     return {
         "agent_type": agent.agent_type,
@@ -49,14 +49,14 @@ def generate_agent_reasoning(llm: LLMClient, question: str, agent: Agent, previo
         }
     }
 
-def synthesize_final_answer(llm: LLMClient, question: str, agent_responses: List[Dict[str, Any]]) -> str:
+async def synthesize_final_answer(llm: LLMClient, question: str, agent_responses: List[Dict[str, Any]]) -> str:
     """Synthesize a final answer based on all responses."""
     thoughts = chr(10).join(f"{resp['thinking_pattern']['raw_thought_stream']}" 
                            for resp in agent_responses)
     prompt = get_synthesis_prompt(question, thoughts)
-    return llm.complete(prompt)
+    return await llm.complete(prompt)
 
-def generate_random_question(llm: LLMClient) -> str:
+async def generate_random_question(llm: LLMClient) -> str:
     """Generate a random human-like question."""
     prompts = [
         "Why do people...",
@@ -85,14 +85,15 @@ def generate_random_question(llm: LLMClient) -> str:
     """
     
     llm.temperature = 1.0  # High creativity for question generation
-    return llm.complete(prompt)
+    return await llm.complete(prompt)
 
-def main():
+async def main():
+    """Run the demo."""
     # Initialize LLM client
     llm = LLMClient(model="gpt-4o", temperature=0.7)
     
     # Generate a random human-like question
-    question = generate_random_question(llm)
+    question = await generate_random_question(llm)
     print(f"\nExploring human question:")
     print("-" * 40)
     print(question)
@@ -119,7 +120,7 @@ def main():
         print(f"\n{agent.agent_type.replace('_', ' ').title()}:")
         print("-" * 40)
         
-        result = generate_agent_reasoning(llm, question, agent, previous_thoughts)
+        result = await generate_agent_reasoning(llm, question, agent, previous_thoughts)
         print(result["thinking_pattern"]["raw_thought_stream"])
         
         agent_responses.append(result)
@@ -132,7 +133,7 @@ def main():
     # Generate and display final answer
     print("\nFinal Answer:")
     print("-" * 80)
-    final_answer = synthesize_final_answer(llm, question, agent_responses)
+    final_answer = await synthesize_final_answer(llm, question, agent_responses)
     print(final_answer)
     print("-" * 80)
 
@@ -141,4 +142,4 @@ if __name__ == "__main__":
     import os
     # Add the src directory to the Python path
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-    main() 
+    asyncio.run(main()) 

@@ -23,8 +23,8 @@ class LLMClient:
         self.model = model
         self.temperature = temperature
         
-    def complete(self, prompt: str, system: Optional[str] = None) -> str:
-        """Get completion from the model."""
+    async def complete(self, prompt: str, system: Optional[str] = None) -> str:
+        """Get completion from the model asynchronously."""
         messages: List[Dict[str, str]] = []
         
         if system:
@@ -33,7 +33,7 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
         
         try:
-            response = completion(
+            response = await acompletion(
                 model=self.model,
                 messages=messages,
                 temperature=self.temperature
@@ -43,8 +43,8 @@ class LLMClient:
             print(f"Error calling LLM: {e}")
             return f"Error: {str(e)}"
             
-    def stream_complete(self, prompt: str, system: Optional[str] = None) -> str:
-        """Get streaming completion from the model."""
+    async def stream_complete(self, prompt: str, system: Optional[str] = None) -> str:
+        """Get streaming completion from the model asynchronously."""
         messages: List[Dict[str, str]] = []
         
         if system:
@@ -53,7 +53,7 @@ class LLMClient:
         messages.append({"role": "user", "content": prompt})
         
         try:
-            response = completion(
+            response = await acompletion(
                 model=self.model,
                 messages=messages,
                 temperature=self.temperature,
@@ -61,7 +61,7 @@ class LLMClient:
             )
             
             full_response = ""
-            for chunk in response:
+            async for chunk in response:
                 if chunk.choices[0].delta.content:
                     full_response += chunk.choices[0].delta.content
                     print(chunk.choices[0].delta.content, end="", flush=True)
