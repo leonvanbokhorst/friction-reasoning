@@ -1,6 +1,6 @@
-"""LLM integration module for agent reasoning."""
+"""LLM integration package."""
 
 from .client import LLMClient
-from .prompts import load_prompt_template
+from .prompts import get_agent_prompt, get_synthesis_prompt, get_direct_prompt
 
-__all__ = ["LLMClient", "load_prompt_template"] 
+__all__ = ['LLMClient', 'get_agent_prompt', 'get_synthesis_prompt', 'get_direct_prompt'] 

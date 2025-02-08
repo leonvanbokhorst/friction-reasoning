@@ -3,7 +3,7 @@
 import subprocess
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Any, List, Tuple
-from litellm import acompletion
+from litellm import acompletion, completion
 from pydantic import BaseModel
 
 class LLMResponse(BaseModel):
@@ -17,25 +17,61 @@ class OllamaModelNotFoundError(Exception):
     pass
 
 class LLMClient:
-    """Client for interacting with LLMs through LiteLLM."""
+    """Wrapper for LiteLLM to handle model interactions."""
     
-    def __init__(self, model: str = "ollama/llama3.2"):
-        """Initialize LLM client.
-        
-        Args:
-            model: Name of the model to use (default: ollama/llama3.2)
-            
-        Raises:
-            OllamaModelNotFoundError: If using an Ollama model that isn't available
-        """
+    def __init__(self, model: str = "ollama/mistral-small", temperature: float = 0.7):
         self.model = model
-        # Configure LiteLLM for Ollama
-        self.api_base = "http://localhost:11434"
+        self.temperature = temperature
         
-        # Verify Ollama model if using one
-        if model.startswith("ollama/"):
-            self._verify_ollama_model(model.split("/")[1])
-    
+    def complete(self, prompt: str, system: Optional[str] = None) -> str:
+        """Get completion from the model."""
+        messages: List[Dict[str, str]] = []
+        
+        if system:
+            messages.append({"role": "system", "content": system})
+            
+        messages.append({"role": "user", "content": prompt})
+        
+        try:
+            response = completion(
+                model=self.model,
+                messages=messages,
+                temperature=self.temperature
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Error calling LLM: {e}")
+            return f"Error: {str(e)}"
+            
+    def stream_complete(self, prompt: str, system: Optional[str] = None) -> str:
+        """Get streaming completion from the model."""
+        messages: List[Dict[str, str]] = []
+        
+        if system:
+            messages.append({"role": "system", "content": system})
+            
+        messages.append({"role": "user", "content": prompt})
+        
+        try:
+            response = completion(
+                model=self.model,
+                messages=messages,
+                temperature=self.temperature,
+                stream=True
+            )
+            
+            full_response = ""
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    full_response += chunk.choices[0].delta.content
+                    print(chunk.choices[0].delta.content, end="", flush=True)
+            print()  # New line after streaming
+            return full_response
+            
+        except Exception as e:
+            print(f"Error streaming from LLM: {e}")
+            return f"Error: {str(e)}"
+
     def _verify_ollama_model(self, model_name: str) -> None:
         """Verify that an Ollama model is available and up to date.
         

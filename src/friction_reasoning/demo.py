@@ -1,106 +1,102 @@
+"""Demo script for friction-based reasoning."""
+
+import random
 from typing import Dict, Any, List
-from litellm import completion
+from friction_reasoning.llm import LLMClient, get_agent_prompt, get_synthesis_prompt
 
 class Agent:
     def __init__(self, agent_type: str):
         self.agent_type = agent_type
         self.thought_patterns = {
             "problem_framer": {
-                "style": "Uses verbal markers, questions cascade naturally, shows initial reactions",
-                "pattern": "Initial reaction → Word play/breakdown → First questions emerge → *physical/mental shift* → Reframing attempt"
+                "style": "Skeptical overthinker, questions everything, bit anxious, uses sarcasm",
+                "pattern": "Initial doubt → Sarcastic observation → *nervous fidget* → Overthinking spiral → Reluctant insight"
             },
             "memory_activator": {
-                "style": "Surfaces memories gradually, shows incomplete recalls, uses active waiting",
-                "pattern": "Echo previous thought → Memory trigger words → *memory surfacing action* → Partial recall → Sensory fragments"
+                "style": "Emotional, dramatic, interrupts self, gets carried away with details",
+                "pattern": "Random tangent → Emotional trigger → *physical reaction* → Oversharing → Sudden connection"
             },
             "mechanism_explorer": {
-                "style": "Uses visualization markers, traces processes, maps physical understanding",
-                "pattern": "Pick up on detail → *physical visualization* → Technical questions → Process tracing → New understanding"
+                "style": "Blunt, technical, slightly condescending, gets lost in details",
+                "pattern": "Technical nitpick → *dismissive gesture* → Actually-well-technically → Process obsession → Grudging insight"
             },
             "perspective_generator": {
-                "style": "Uses pattern interrupts, shows physical reframing, thinks metaphorically",
-                "pattern": "*physical perspective shift* → Pattern interrupt → Radical reframe → *sit with impact* → New implications"
+                "style": "Contrarian, challenges assumptions, bit aggressive, plays devil's advocate",
+                "pattern": "*confrontational stance* → Challenge norms → Push buttons → *intense stare* → Provocative reframe"
             },
             "synthesizer": {
-                "style": "Shows integration, demonstrates emergence, uses sensory synthesis",
-                "pattern": "Gather threads → Watch patterns form → *embodied integration* → Emerging insight → Embrace complexity"
-            },
+                "style": "Chaotic connector, jumps between ideas, gets excited, sometimes judgmental",
+                "pattern": "Scattered gathering → Random connection → *excited bounce* → Messy insight → Opinionated conclusion"
+            }
         }
 
-def get_stream_of_consciousness_prompt(question: str, agent: Agent) -> str:
-    return f"""You are a {agent.agent_type}. Give me EXACTLY 3 clear, concise sentences showing one key moment of friction in your thinking.
-
-Question: "{question}"
-
-Your response must:
-1. Be EXACTLY 3 complete consecutive sentences
-2. Include *asterisks* for physical actions
-3. Use ... for pauses
-4. Follow this pattern: {agent.thought_patterns[agent.agent_type]["pattern"]}
-
-Style: {agent.thought_patterns[agent.agent_type]["style"]}
-
-CRITICAL: Give me JUST the 3 consecutive sentences. No newlines, no introduction, no commentary, no fragments. Keep each sentence clear and concise."""
-
-def generate_agent_reasoning(question: str, agent: Agent) -> Dict[str, Any]:
+def generate_agent_reasoning(llm: LLMClient, question: str, agent: Agent, previous_thoughts: str = "") -> Dict[str, Any]:
     """Generate authentic stream-of-consciousness reasoning."""
-    
-    prompt = get_stream_of_consciousness_prompt(question, agent)
-    
-    response = completion(
-        model="ollama/llama3.2",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7  # Slightly lower temperature for more focused responses
+    prompt = get_agent_prompt(
+        agent.agent_type, 
+        question, 
+        agent.thought_patterns[agent.agent_type],
+        previous_thoughts
     )
+    llm.temperature = random.uniform(0.7, 1.0)
+    response = llm.complete(prompt)
     
     return {
         "agent_type": agent.agent_type,
         "thinking_pattern": {
-            "raw_thought_stream": response.choices[0].message.content,
+            "raw_thought_stream": response,
             "friction_moments": []  # In a full implementation, we'd parse and identify friction points
         }
     }
 
-def synthesize_final_answer(question: str, agent_responses: List[Dict[str, Any]]) -> str:
+def synthesize_final_answer(llm: LLMClient, question: str, agent_responses: List[Dict[str, Any]]) -> str:
     """Synthesize a final answer based on all responses."""
-    prompt = f"""Based on the collective thinking about the question:
-"{question}"
+    thoughts = chr(10).join(f"{resp['thinking_pattern']['raw_thought_stream']}" 
+                           for resp in agent_responses)
+    prompt = get_synthesis_prompt(question, thoughts)
+    return llm.complete(prompt)
 
-Their thoughts:
-{chr(10).join(f"{resp['agent_type']}: {resp['thinking_pattern']['raw_thought_stream']}" for resp in agent_responses)}
-
-Give me an answer that is a synthesis of the thoughts:
-1. Include *asterisks* for physical actions
-2. Use ... for pauses
-3. Answer in first person, human-like messy like a human would speak
-"""
-
-    response = completion(
-        model="ollama/llama3.2",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
-    )
+def generate_random_question(llm: LLMClient) -> str:
+    """Generate a random human-like question."""
+    prompts = [
+        "Why do people...",
+        "What if we could...",
+        "I keep wondering about...",
+        "Sometimes I think about...",
+        "Is it weird that...",
+        "How come whenever...",
+        "Do you ever feel like...",
+        "I can't stop thinking about...",
+    ]
+    base = random.choice(prompts)
+    prompt = f"""Create a natural human question that starts with something like "{base}" but different.
     
-    return response.choices[0].message.content
-
-def generate_direct_answer(question: str) -> str:
-    """Generate a direct answer without the friction-based thinking process."""
-    prompt = f"""Answer this question:
-"{question}"
-"""
-
-    response = completion(
-        model="ollama/llama3.2",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
-    )
+    Rules:
+    - Must be personal and emotionally resonant
+    - End with ... or something similar
+    - Use casual very human-like language
+    - Make it feel unfinished/trailing off or like a question that was cut off
+    - Or ponder a question that's not really a question
     
-    return response.choices[0].message.content
+    Examples:
+    "Why do people get so weird about money... (but not about love?)"
+    "Is it weird that I love the smell of rain, and the sound of rain?
+    "Sometimes I think about my childhood bedroom and then... I'm not sure what I think about it. What do you think?"
+    """
+    
+    llm.temperature = 1.0  # High creativity for question generation
+    return llm.complete(prompt)
 
 def main():
-    question = "Write a love letter to my ex boss"
+    # Initialize LLM client
+    llm = LLMClient(model="gpt-4o", temperature=0.7)
     
-    print("\nNow let's explore with friction-based thinking...")
+    # Generate a random human-like question
+    question = generate_random_question(llm)
+    print(f"\nExploring human question:")
+    print("-" * 40)
+    print(question)
+    print("-" * 40)
     
     # Create agents in the correct sequence for building understanding
     agents = [
@@ -113,32 +109,36 @@ def main():
     
     # Collect all agent responses
     agent_responses = []
+    previous_thoughts = ""
     
-    # Each agent builds on the collective understanding
+    print("\nThinking process:")
+    print("-" * 80)
+    
+    # Process all agents
     for agent in agents:
         print(f"\n{agent.agent_type.replace('_', ' ').title()}:")
-        print("-" * 80)
+        print("-" * 40)
         
-        result = generate_agent_reasoning(question, agent)
+        result = generate_agent_reasoning(llm, question, agent, previous_thoughts)
         print(result["thinking_pattern"]["raw_thought_stream"])
-        print("-" * 80)
         
         agent_responses.append(result)
+        # Update previous thoughts for next agent - without including agent type prefix
+        previous_thoughts = "\n".join(
+            resp["thinking_pattern"]["raw_thought_stream"]
+            for resp in agent_responses
+        )
     
     # Generate and display final answer
-    print(f"\nQuestion: {question}")
-    print("\nFinal Answer (after friction-based thinking):")
+    print("\nFinal Answer:")
     print("-" * 80)
-    final_answer = synthesize_final_answer(question, agent_responses)
+    final_answer = synthesize_final_answer(llm, question, agent_responses)
     print(final_answer)
     print("-" * 80)
 
-    print("\nDirect Answer (without friction-based thinking):")
-    print("-" * 80)
-    direct_answer = generate_direct_answer(question)
-    print(direct_answer)
-    print("-" * 80)
-    
-
 if __name__ == "__main__":
+    import sys
+    import os
+    # Add the src directory to the Python path
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
     main() 
