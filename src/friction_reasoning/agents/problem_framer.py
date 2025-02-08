@@ -2,6 +2,7 @@
 
 from typing import Dict, Optional
 from .base_agent import BaseAgent
+from ..llm.client import LLMClient
 
 class ProblemFramer(BaseAgent):
     """Agent that performs initial problem framing and exploration.
@@ -13,11 +14,11 @@ class ProblemFramer(BaseAgent):
     - Mental noting
     """
     
-    def __init__(self):
+    def __init__(self, llm_client: Optional[LLMClient] = None):
         """Initialize the Problem Framer agent."""
-        super().__init__("problem_framer")
+        super().__init__("problem_framer", llm_client)
     
-    def think(self, prompt: str, context: Optional[Dict] = None) -> str:
+    async def think(self, prompt: str, context: Optional[Dict] = None) -> Dict:
         """Generate initial problem framing thought stream.
         
         Pattern:
@@ -32,32 +33,6 @@ class ProblemFramer(BaseAgent):
             context: Not used by this agent as it's always first
             
         Returns:
-            The raw thought stream
+            Dict containing the agent's response with thought stream and friction points
         """
-        # Clear previous state
-        self.thought_stream = []
-        self.friction_points = []
-        
-        # Initial reaction with word play
-        initial_reaction = f"{prompt}... *feels the words resonate*... "
-        self.thought_stream.append(initial_reaction)
-        
-        # Add natural pause friction
-        self.add_friction_point("natural_pause", "*feels the words resonate*")
-        
-        # Word breakdown and questioning
-        words = prompt.split()
-        key_word = words[-1]  # Often the main concept is at the end
-        word_play = f"When I think '{key_word}' I think... "
-        self.thought_stream.append(word_play)
-        
-        # Mental shift and reframing
-        shift_marker = "*shifts mental position*"
-        self.thought_stream.append(shift_marker)
-        self.add_friction_point("perspective_shift", shift_marker)
-        
-        # Final reframing
-        reframe = "Wait... maybe we need to look at this differently..."
-        self.thought_stream.append(reframe)
-        
-        return "\n".join(self.thought_stream) 
+        return await self._generate_thought_stream(prompt, context) 

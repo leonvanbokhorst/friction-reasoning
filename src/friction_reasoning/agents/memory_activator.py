@@ -2,6 +2,7 @@
 
 from typing import Dict, Optional, List
 from .base_agent import BaseAgent
+from ..llm.client import LLMClient
 
 class MemoryActivator(BaseAgent):
     """Agent that surfaces and processes memories related to the topic.
@@ -13,11 +14,11 @@ class MemoryActivator(BaseAgent):
     - Includes sensory memories
     """
     
-    def __init__(self):
+    def __init__(self, llm_client: Optional[LLMClient] = None):
         """Initialize the Memory Activator agent."""
-        super().__init__("memory_activator")
+        super().__init__("memory_activator", llm_client)
         
-    def think(self, prompt: str, context: Optional[Dict] = None) -> str:
+    async def think(self, prompt: str, context: Optional[Dict] = None) -> Dict:
         """Generate memory-based thought stream.
         
         Pattern:
@@ -32,34 +33,6 @@ class MemoryActivator(BaseAgent):
             context: Previous agent's response for continuity
             
         Returns:
-            The raw thought stream
+            Dict containing the agent's response with thought stream and friction points
         """
-        # Clear previous state
-        self.thought_stream = []
-        self.friction_points = []
-        
-        # Echo from context if available
-        if context and "raw_thought_stream" in context.get("thinking_pattern", {}):
-            last_thought = context["thinking_pattern"]["raw_thought_stream"].split("\n")[-1]
-            key_phrase = last_thought.split("...")[-1].strip()
-            echo = f"{key_phrase}... that's tugging at something..."
-            self.thought_stream.append(echo)
-        
-        # Memory surfacing action
-        surface_marker = "*closes eyes, letting memory float up*"
-        self.thought_stream.append(surface_marker)
-        self.add_friction_point("active_waiting", surface_marker)
-        
-        # Partial recall with uncertainty
-        recall = "There was this... something about... wait..."
-        self.thought_stream.append(recall)
-        
-        # Memory arrangement
-        arrange_marker = "*feels memories arranging themselves*"
-        self.thought_stream.append(arrange_marker)
-        self.add_friction_point("memory_organization", arrange_marker)
-        
-        # Sensory fragment
-        self.thought_stream.append("Like pieces of a puzzle... some clear, some fuzzy...")
-        
-        return "\n".join(self.thought_stream) 
+        return await self._generate_thought_stream(prompt, context)

@@ -2,6 +2,7 @@
 
 from typing import Dict, Optional, List
 from .base_agent import BaseAgent
+from ..llm.client import LLMClient
 
 class MechanismExplorer(BaseAgent):
     """Agent that explores and traces mechanisms and processes.
@@ -13,11 +14,11 @@ class MechanismExplorer(BaseAgent):
     - Shows technical wonderings
     """
     
-    def __init__(self):
+    def __init__(self, llm_client: Optional[LLMClient] = None):
         """Initialize the Mechanism Explorer agent."""
-        super().__init__("mechanism_explorer")
+        super().__init__("mechanism_explorer", llm_client)
         
-    def think(self, prompt: str, context: Optional[Dict] = None) -> str:
+    async def think(self, prompt: str, context: Optional[Dict] = None) -> Dict:
         """Generate mechanism-focused thought stream.
         
         Pattern:
@@ -32,7 +33,26 @@ class MechanismExplorer(BaseAgent):
             context: Previous agent's response for continuity
             
         Returns:
-            The raw thought stream
+            Dict containing the agent's response with thought stream and friction points
+        """
+        return await self._generate_thought_stream(prompt, context)
+
+    def _generate_thought_stream(self, prompt: str, context: Optional[Dict] = None) -> Dict:
+        """Generate mechanism-focused thought stream.
+        
+        Pattern:
+        1. Pick up on detail
+        2. Physical visualization
+        3. Technical questions
+        4. Process tracing
+        5. New understanding emerges
+        
+        Args:
+            prompt: The question or topic to reason about
+            context: Previous agent's response for continuity
+            
+        Returns:
+            Dict containing the agent's response with thought stream and friction points
         """
         # Clear previous state
         self.thought_stream = []
@@ -73,4 +93,7 @@ class MechanismExplorer(BaseAgent):
         self.add_friction_point("insight_emergence", insight_marker)
         self.thought_stream.append("Oh! What if it's more like...")
         
-        return "\n".join(self.thought_stream) 
+        return {
+            "thought_stream": "\n".join(self.thought_stream),
+            "friction_points": self.friction_points
+        } 

@@ -2,6 +2,7 @@
 
 from typing import Dict, Optional, List
 from .base_agent import BaseAgent
+from ..llm.client import LLMClient
 
 class PerspectiveGenerator(BaseAgent):
     """Agent that generates alternative perspectives and challenges assumptions.
@@ -13,11 +14,11 @@ class PerspectiveGenerator(BaseAgent):
     - Challenges assumptions
     """
     
-    def __init__(self):
+    def __init__(self, llm_client: Optional[LLMClient] = None):
         """Initialize the Perspective Generator agent."""
-        super().__init__("perspective_generator")
+        super().__init__("perspective_generator", llm_client)
         
-    def think(self, prompt: str, context: Optional[Dict] = None) -> str:
+    async def think(self, prompt: str, context: Optional[Dict] = None) -> Dict:
         """Generate perspective-shifting thought stream.
         
         Pattern:
@@ -32,7 +33,26 @@ class PerspectiveGenerator(BaseAgent):
             context: Previous agent's response for continuity
             
         Returns:
-            The raw thought stream
+            Dict containing the agent's response with thought stream and friction points
+        """
+        return await self._generate_thought_stream(prompt, context)
+
+    def _generate_thought_stream(self, prompt: str, context: Optional[Dict] = None) -> Dict:
+        """Generate perspective-shifting thought stream.
+        
+        Pattern:
+        1. Physical perspective shift
+        2. Pattern interrupt
+        3. Radical reframe
+        4. Sit with impact
+        5. New implications emerge
+        
+        Args:
+            prompt: The question or topic to reason about
+            context: Previous agent's response for continuity
+            
+        Returns:
+            Dict containing the agent's response with thought stream and friction points
         """
         # Clear previous state
         self.thought_stream = []
@@ -78,4 +98,7 @@ class PerspectiveGenerator(BaseAgent):
         self.add_friction_point("perspective_vertigo", vertigo_marker)
         self.thought_stream.append("And if that's true, then everything we thought about this might be...")
         
-        return "\n".join(self.thought_stream) 
+        return {
+            "thought_stream": "\n".join(self.thought_stream),
+            "friction_points": self.friction_points
+        } 

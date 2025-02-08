@@ -1,23 +1,24 @@
 """Synthesizer Agent - Integrates perspectives and finds emergent understanding."""
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from .base_agent import BaseAgent
+from ..llm.client import LLMClient
 
 class Synthesizer(BaseAgent):
     """Agent that synthesizes multiple perspectives into emergent understanding.
     
     Characteristics:
-    - Shows integration
-    - Demonstrates emergence
-    - Uses sensory synthesis
-    - Embraces complexity
+    - Show integration process
+    - Demonstrate emergence
+    - Use sensory synthesis
+    - Embrace complexity
     """
     
-    def __init__(self):
+    def __init__(self, llm_client: Optional[LLMClient] = None):
         """Initialize the Synthesizer agent."""
-        super().__init__("synthesizer")
+        super().__init__("synthesizer", llm_client)
         
-    def think(self, prompt: str, context: Optional[Dict] = None) -> str:
+    async def think(self, prompt: str, context: Optional[Dict] = None) -> Dict:
         """Generate synthesizing thought stream.
         
         Pattern:
@@ -32,7 +33,26 @@ class Synthesizer(BaseAgent):
             context: Previous agent's response for continuity
             
         Returns:
-            The raw thought stream
+            Dict containing the agent's response with thought stream and friction points
+        """
+        return await self._generate_thought_stream(prompt, context)
+
+    def _generate_thought_stream(self, prompt: str, context: Optional[Dict] = None) -> Dict:
+        """Generate synthesizing thought stream.
+        
+        Pattern:
+        1. Gather threads
+        2. Watch patterns form
+        3. Embodied integration
+        4. Emerging insight
+        5. Embrace complexity
+        
+        Args:
+            prompt: The question or topic to reason about
+            context: Previous agent's response for continuity
+            
+        Returns:
+            Dict containing the agent's response with thought stream and friction points
         """
         # Clear previous state
         self.thought_stream = []
@@ -82,4 +102,7 @@ class Synthesizer(BaseAgent):
         self.add_friction_point("complexity_embrace", complexity_marker)
         self.thought_stream.append("And maybe that's exactly what makes this so...")
         
-        return "\n".join(self.thought_stream) 
+        return {
+            "thought_stream": "\n".join(self.thought_stream),
+            "friction_points": self.friction_points
+        } 
