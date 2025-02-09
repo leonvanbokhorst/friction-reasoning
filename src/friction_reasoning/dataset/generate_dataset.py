@@ -13,6 +13,7 @@ from statistics import mean, median
 from dotenv import load_dotenv
 from huggingface_hub import HfApi
 from datasets import Dataset, load_dataset
+import argparse
 
 from ..llm import LLMClient
 from ..demo import Agent, generate_agent_reasoning, synthesize_final_answer
@@ -119,25 +120,27 @@ async def generate_question(llm: LLMClient) -> str:
     # Pick random category and base prompt
     category = random.choice(list(BASE_PROMPTS.keys()))
     base = random.choice(BASE_PROMPTS[category])
+    base2 = random.choice(BASE_PROMPTS[category])
     emotion = random.choice(EMOTIONS)
+    emotion2 = random.choice(EMOTIONS)
+
+    if base2 == base:
+        base2 = random.choice(BASE_PROMPTS[category])
+
+    if emotion2 == emotion:
+        emotion2 = random.choice(EMOTIONS)
     
-    prompt = f"""Create a natural, {emotion} question or thought that starts similarly to: "{base}"
+    prompt = f"""Create a SHORT natural, {emotion} and {emotion2} question or thought that starts similarly to: "{base}".
 
 Rules:
 - Must feel deeply personal and emotional
-- Sometimes change the start of the question to start with "So" or "You" or "Well"
 - Use very casual, human-like language
 - Make it feel unfinished/uncertain
-- Maximum 32 words
 - Can be a statement that implies a question or a question to the AI
 - Sometimes end with ... or similar trailing off
-Examples:
-"Sometimes I look at old photos and just... y'know?"
-"Why do people pretend everything's fine when clearly they're not?"
-"Been thinking about my childhood room lately and..."
 """
     
-    llm.temperature = random.uniform(0.5, 0.8)  # High creativity for variety
+    llm.temperature = random.uniform(0.6, 0.8)  # High creativity for variety
     response = await llm.complete(prompt)
     
     # Clean up the response
@@ -382,25 +385,49 @@ async def generate_dataset(num_examples: int = 1200, batch_size: int = 10) -> Li
     print(f"Total batches: {batch_num}")
     return dataset
 
-async def main():
-    """Generate the dataset and upload to HuggingFace Hub."""
-    print("\nGenerating 1200 examples in small batches of 10...")
+async def test_generation():
+    """Test dataset generation with a single batch."""
+    print("\nTesting dataset generation with one batch of 3 examples...")
     try:
-        dataset = await generate_dataset(num_examples=1200, batch_size=10)
-        print("\nDataset generation complete.")
+        dataset = await generate_dataset(num_examples=3, batch_size=3)
+        print("\nTest batch generation complete.")
+        print(f"Generated {len(dataset)} examples")
         
-        # Upload to HuggingFace Hub
-        dataset_path = "data/friction_reasoning/friction_reasoning_dataset.jsonl"
-        print("\nUploading dataset to Hugging Face Hub...")
-        await upload_to_hub(
-            dataset_path=dataset_path,
-            description="A dataset of multi-agent reasoning examples with designed friction points, capturing stream-of-consciousness thoughts and cognitive processes."
-        )
+        # Print a sample example for inspection
+        if dataset:
+            print("\nSample example:")
+            sample = dataset[0]
+            print(f"Question: {sample['question']}")
+            print("\nAgent responses:")
+            for resp in sample['agent_responses']:
+                print(f"\n{resp['agent_type']}:")
+                print(f"Thought stream: {resp['thought_stream'][:200]}...")
+            print(f"\nFinal answer: {sample['final_answer'][:200]}...")
     except Exception as e:
-        print(f"\nFatal error in dataset generation/upload: {type(e).__name__}: {str(e)}")
+        print(f"\nError in test generation: {type(e).__name__}: {str(e)}")
         print("\nStacktrace:")
         traceback.print_exc()
-        print("\nOperation failed.")
+        print("\nTest failed.")
+
+async def main():
+    """Generate the dataset and upload to HuggingFace Hub."""
+    parser = argparse.ArgumentParser(description='Generate friction reasoning dataset')
+    parser.add_argument('--num_examples', type=int, default=3,
+                      help='Number of examples to generate (default: 3 for testing)')
+    parser.add_argument('--batch_size', type=int, default=10,
+                      help='Batch size for generation (default: 10)')
+    parser.add_argument('--test', action='store_true',
+                      help='Run in test mode with 3 examples')
+    args = parser.parse_args()
+    
+    if args.test:
+        # Run test generation
+        await test_generation()
+    else:
+        # Generate full dataset
+        print(f"\nGenerating {args.num_examples} examples in batches of {args.batch_size}...")
+        dataset = await generate_dataset(num_examples=args.num_examples, batch_size=args.batch_size)
+        print("\nDataset generation complete!")
 
 if __name__ == "__main__":
     asyncio.run(main()) 

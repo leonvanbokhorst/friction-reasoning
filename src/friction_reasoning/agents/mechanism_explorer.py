@@ -1,4 +1,4 @@
-"""Mechanism Explorer Agent - Traces processes and explores mechanisms."""
+"""Mechanism Explorer agent that investigates physical and embodied aspects of friction."""
 
 from typing import Dict, Optional, List
 from .base_agent import BaseAgent

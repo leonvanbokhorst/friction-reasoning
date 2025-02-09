@@ -64,14 +64,14 @@ def main():
     print("\nLoading model and tokenizer...")
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=config["model_config"]["base_model"],
-        max_seq_length=config["model_config"]["model_max_length"],
+        max_seq_length=config["model_config"]["model_max_length"]*2,
         load_in_4bit=True,
         trust_remote_code=False,
         device_map="auto",
     )
     
     # Load the trained adapter
-    adapter_path = Path(config["output_config"]["output_dir"]) / "lora_model"
+    adapter_path = Path(config["output_config"]["output_dir"]) / "lora_model" 
     if adapter_path.exists():
         print(f"Loading trained adapter from {adapter_path}")
         model.load_adapter(adapter_path)
