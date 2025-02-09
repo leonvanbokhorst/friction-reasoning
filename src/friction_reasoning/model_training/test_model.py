@@ -32,7 +32,7 @@ def generate_response(model, tokenizer, prompt: str, system_prompt: str = None, 
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=4096,
-                temperature=0.7,
+                temperature=0.8,
                 top_p=0.9,
                 do_sample=True,
                 pad_token_id=tokenizer.pad_token_id,
@@ -43,7 +43,7 @@ def generate_response(model, tokenizer, prompt: str, system_prompt: str = None, 
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=4096,
-                temperature=0.7,
+                temperature=0.8,
                 top_p=0.9,
                 do_sample=True,
                 pad_token_id=tokenizer.pad_token_id,
@@ -66,7 +66,7 @@ def main():
         model_name=config["model_config"]["base_model"],
         max_seq_length=config["model_config"]["model_max_length"],
         load_in_4bit=True,
-        trust_remote_code=True,
+        trust_remote_code=False,
         device_map="auto",
     )
     
@@ -90,11 +90,7 @@ def main():
     
     # Test prompts that require multi-agent reasoning
     test_prompts = [
-        "What are the potential risks and benefits of implementing a universal basic income?",
-        "How might artificial general intelligence impact human creativity and artistic expression?",
-        "What role should government play in regulating emerging technologies?",
-        "How can we balance individual privacy with national security in the digital age?",
-        "What are the ethical implications of human genetic engineering?",
+        "Code me pong in python"
     ]
     
     print("\nRunning test prompts (with streaming)...")
