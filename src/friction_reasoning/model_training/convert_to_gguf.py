@@ -33,7 +33,7 @@ def setup_llama_cpp():
             os.symlink("build/bin/llama-quantize", llama_cpp_dir / "llama-quantize")
 
 def merge_lora_weights(
-    base_model="unsloth/DeepSeek-R1-Distill-Qwen-7B-unsloth-bnb-4bit",
+    base_model="unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit",
     lora_path="lora_model",  # Relative to work_dir
 ):
     """Merge LoRA weights and convert to GGUF format."""
@@ -47,7 +47,7 @@ def merge_lora_weights(
     
     # Convert path to absolute
     lora_path = "/home/lonn/repo/neural-notebook-ai/output/lora_model"
-    output_dir = work_dir / "Deepseek-R1-distill-Qwen-7B-Friction"
+    output_dir = work_dir / "model_gguf"
     output_dir.mkdir(exist_ok=True, parents=True)
     
     print("\nLoading base model...")
@@ -80,13 +80,13 @@ def merge_lora_weights(
     
     print("\nMerging weights and saving to GGUF...")
     # Save directly to GGUF formats
-    output_dir = work_dir / "Deepseek-R1-distill-Qwen-7B-Friction"
+    output_dir = work_dir / "model_gguf"
     output_dir.mkdir(exist_ok=True, parents=True)
     
     quantizations = [
         "q4_k_m",  # Recommended balance of size/speed
-        "q5_k_m",  # Higher quality than q4_k_m
-        "q8_0",    # High resource but high quality
+        #"q5_k_m",  # Higher quality than q4_k_m
+        #"q8_0",    # High resource but high quality
     ]
     
     for quant in quantizations:

@@ -1,6 +1,6 @@
 # Model Configuration
 model_config:
-  base_model: "unsloth/DeepSeek-R1-Distill-Qwen-7B-unsloth-bnb-4bit"
+  base_model: "unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit"
   trust_remote_code: true
   use_flash_attention_2: true  # Added from old config
   torch_dtype: "bfloat16"

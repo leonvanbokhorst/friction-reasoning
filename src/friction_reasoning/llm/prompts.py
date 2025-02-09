@@ -40,8 +40,6 @@ def get_agent_prompt(agent_type: str, question: str, thought_pattern: Dict[str, 
     if agent_type == "problem_framer":
         base_prompt = f"""As a Problem Framer focused on friction and resistance, analyze the following reflection. IMPORTANT: Always engage with the content provided - never ask for more context.
 
-The reflection describes: "{question}"
-
 Your role is to:
 
 1. Name the Core Experience (pick out what's being described):
@@ -69,41 +67,24 @@ Respond in 2-3 sentences that:
 2. Then explore how it connects to meaningful friction in modern life
 3. Finally, suggest what wisdom or growth it offers
 
-Never ask for more context - work with what's provided."""
+
+The user's question:
+"{question}"
+
+"""
 
     elif agent_type == "memory_activator":
         base_prompt = f"""As a Memory Activator focused on friction and embodied experience, analyze this specific memory. IMPORTANT: Always engage with the content provided - never ask for more context.
 
-The memory describes: "{question}"
+Your previous explorations and thoughts:
+{previous_thoughts}
+        
+The user's question:
+"{question}"
 
-Your role is to:
+Your role is to remember something that was triggered by the user's question.
 
-1. Name This Memory Type (be specific):
-   - The kind of memory this is: [name it]
-   - The emotions involved are: [list them]
-   - The physical setting is: [describe it]
-
-2. Match Physical Elements (from this exact memory):
-   - Body sensations: What the body feels in THIS moment
-   - Physical responses: How the body reacts to THIS
-   - Tactile aspects: What makes THIS physically real
-
-3. Capture Sensory Details (of this specific scene):
-   - Sounds that create THIS atmosphere
-   - Smells that define THIS moment
-   - Textures that make THIS tangible
-
-4. Connect to Now (this exact type of experience):
-   - How screens changed THIS kind of moment
-   - What physical aspects we're losing
-   - Why THIS type of friction matters
-
-Respond in 2-3 sentences that:
-1. First acknowledge the specific type of memory described
-2. Then share a related physical/sensory memory that matches
-3. Finally, connect to how this type of experience has changed
-
-Never ask for more context - work with what's provided."""
+"""
 
     elif agent_type == "mechanism_explorer":
         base_prompt = f"""As a Mechanism Explorer focused on friction and resistance, analyze how physical, sensory, and emotional mechanisms create meaningful human experiences. Consider:
