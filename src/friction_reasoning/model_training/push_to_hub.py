@@ -7,7 +7,7 @@ from huggingface_hub import HfApi
 
 def push_gguf_to_hub(
     hub_repo="leonvanbokhorst/deepseek-r1-overthinking",
-    model_dir="Deepseek-R1-distill-Qwen-7B-Friction"
+    model_dir="model_gguf"
 ):
     """Push GGUF models to HuggingFace Hub."""
     # Set up working directory
@@ -21,8 +21,8 @@ def push_gguf_to_hub(
     
     quantizations = [
         "q4_k_m",  # Recommended balance of size/speed
-        "q5_k_m",  # Higher quality than q4_k_m
-        "q8_0",    # High resource but high quality
+        #"q5_k_m",  # Higher quality than q4_k_m
+        #"q8_0",    # High resource but high quality
     ]
     
     api = HfApi()

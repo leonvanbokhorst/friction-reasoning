@@ -46,7 +46,7 @@ def merge_lora_weights(
     setup_llama_cpp()
     
     # Convert path to absolute
-    lora_path = "/home/lonn/repo/neural-notebook-ai/output/lora_model"
+    lora_path = "/home/lonn/friction-reasoning-data-gen/models/friction_reasoning/lora_model"
     output_dir = work_dir / "model_gguf"
     output_dir.mkdir(exist_ok=True, parents=True)
     
@@ -63,7 +63,7 @@ def merge_lora_weights(
     config = PeftConfig.from_pretrained(lora_path)
     model = FastLanguageModel.get_peft_model(
         model,
-        r=64,  # LoRA rank: Determines the size of the trainable adapters
+        r=16,  # LoRA rank: Determines the size of the trainable adapters
         target_modules=[  # List of transformer layers where LoRA adapters will be applied
             "q_proj",   # Query projection in self-attention
             "k_proj",   # Key projection in self-attention
@@ -73,7 +73,7 @@ def merge_lora_weights(
             "up_proj",    # Part of transformer's feed-forward network
             "down_proj",  # Another part of transformer's FFN
         ],
-        lora_alpha=128,  # Scaling factor for LoRA updates
+        lora_alpha=32,  # Scaling factor for LoRA updates
     )
 
     model.load_adapter(lora_path, adapter_name="default")

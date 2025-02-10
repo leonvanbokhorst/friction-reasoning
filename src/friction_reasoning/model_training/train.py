@@ -32,22 +32,69 @@ def print_warning(message: str) -> None:
     print(f"⚠️  {message}")
 
 
-def format_conversation(example: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, str]:
-    """Format a single conversation example according to the template."""
-    # Concatenate all agent thought streams with double newlines
-    thought_stream = "\n\n".join(
-        agent["thought_stream"] 
-        for agent in example[config["dataset_config"]["columns"]["agent_responses"]]
-    )
+def format_conversation(examples: Dict[str, Any], config: Dict[str, Any], indices: List[int]) -> Dict[str, str]:
+    """Format multiple conversation turns into a single conversation.
     
-    # Format the conversation using the template
-    text = config["dataset_config"]["format_template"].format(
-        question=example[config["dataset_config"]["columns"]["question"]],
-        thought_stream=thought_stream,
-        final_answer=example[config["dataset_config"]["columns"]["final_answer"]]
-    )
+    Args:
+        examples: Dictionary containing multiple examples
+        config: Configuration dictionary
+        indices: List of indices for this batch
+        
+    Returns:
+        Dictionary with concatenated conversations for the batch
+    """
+    # Get the relevant columns
+    question_col = config["dataset_config"]["columns"]["question"]
+    agent_responses_col = config["dataset_config"]["columns"]["agent_responses"]
+    final_answer_col = config["dataset_config"]["columns"]["final_answer"]
     
-    return {"text": text}
+    # Number of examples in dataset
+    n_examples = len(examples[question_col])
+    
+    # Process each batch index
+    all_texts = []
+    for batch_idx in indices:
+        # Build conversation by concatenating 4 turns
+        conversation_parts = []
+        for i in range(4):  # Always combine 4 turns
+            # Get current example index, wrapping around if needed
+            current_idx = (batch_idx + i) % n_examples
+            
+            # Get the components for this turn
+            question = examples[question_col][current_idx]
+            thought_stream = "\n\n".join(
+                agent["thought_stream"]
+                for agent in examples[agent_responses_col][current_idx]
+            )
+            final_answer = examples[final_answer_col][current_idx]
+            
+            # Format this turn using the template
+            # Only include system prompt for first turn
+            if i == 0:
+                turn = config["dataset_config"]["format_template"].format(
+                    question=question,
+                    thought_stream=thought_stream,
+                    final_answer=final_answer
+                )
+            else:
+                # Skip system prompt for subsequent turns
+                turn = (
+                    "<|im_start|>user\n"
+                    f"{question}\n"
+                    "<|im_end|><|im_start|>assistant\n"
+                    "<think>\n"
+                    f"{thought_stream}\n"
+                    "</think>\n"
+                    f"{final_answer}\n"
+                    "<|im_end|>"
+                )
+            conversation_parts.append(turn)
+        
+        # Join all turns for this conversation
+        text = "".join(conversation_parts)
+        all_texts.append(text)
+    
+    return {"text": all_texts}
 
 
 def load_config(config_path: str = None) -> Dict[str, Any]:
@@ -123,11 +170,14 @@ def load_and_prepare_dataset(config: Dict[str, Any], tokenizer) -> Dataset:
     print(f"• Loading dataset: {config['dataset_config']['dataset_name']}")
     dataset = load_dataset(config["dataset_config"]["dataset_name"])
     
-    # Format conversations
-    print("• Formatting conversations")
+    # Format conversations with 4-turn concatenation
+    print("• Formatting conversations (4 turns per example)")
     formatted_dataset = dataset.map(
-        lambda x: format_conversation(x, config),
+        lambda examples, idx: format_conversation(examples, config, idx),
         remove_columns=dataset["train"].column_names,  # Remove original columns
+        with_indices=True,  # Pass indices to format_conversation
+        batched=True,  # Process in batches
+        batch_size=4,  # Process 4 examples at a time
         desc="Formatting conversations"
     )
 
@@ -159,12 +209,13 @@ def load_and_prepare_dataset(config: Dict[str, Any], tokenizer) -> Dataset:
     print("\nDataset Statistics:")
     print(f"• Number of training examples: {len(formatted_dataset['train'])}")
     print(f"• Number of validation examples: {len(formatted_dataset['validation'])}")
+    print(f"• Each example contains 4 concatenated conversations")
 
     # Sample and print conversations
     print("\nVerifying conversation formats:")
-    for i in range(2):  # Show 2 random examples
+    for i in range(1):  # Show 1 random example since they're longer now
         random_idx = torch.randint(0, len(formatted_dataset["train"]), (1,)).item()
-        print(f"\n=== Random conversation example {i+1} (idx={random_idx}) ===")
+        print(f"\n=== Random conversation example (idx={random_idx}) ===")
         print(formatted_dataset["train"][random_idx]["text"])
         print("=" * 50)
 
