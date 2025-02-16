@@ -33,7 +33,7 @@ def setup_llama_cpp():
             os.symlink("build/bin/llama-quantize", llama_cpp_dir / "llama-quantize")
 
 def merge_lora_weights(
-    base_model="unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit",
+    base_model="unsloth/DeepSeek-R1-Distill-Qwen-7B-unsloth-bnb-4bit",
     lora_path="lora_model",  # Relative to work_dir
 ):
     """Merge LoRA weights and convert to GGUF format."""

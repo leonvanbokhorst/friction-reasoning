@@ -6,10 +6,12 @@ import os
 import yaml
 from datetime import datetime
 from typing import Dict, Any, List
+import random
+from statistics import mean
 
 from unsloth import FastLanguageModel, UnslothTrainer, UnslothTrainingArguments
 from unsloth.chat_templates import get_chat_template, train_on_responses_only
-from datasets import load_dataset, Dataset, DatasetDict
+from datasets import load_dataset, Dataset, DatasetDict, concatenate_datasets
 from transformers import (
     DataCollatorForSeq2Seq,
     TrainerCallback,
@@ -97,6 +99,78 @@ def format_conversation(examples: Dict[str, Any], config: Dict[str, Any], indice
     return {"text": all_texts}
 
 
+def format_dataset_example(example: Dict[str, Any], dataset_name: str, config: Dict[str, Any], tokenizer) -> Dict[str, str]:
+    """Format a dataset example based on its source dataset.
+    
+    Args:
+        example: The dataset example to format
+        dataset_name: Name of the source dataset
+        config: Configuration dictionary
+        tokenizer: The tokenizer for length calculation
+        
+    Returns:
+        Dictionary with formatted text and token count
+    """
+    if "reluctance" in dataset_name:
+        # Convert <judging> tags to <think> tags for consistency
+        text = example["text"].replace("<judging>", "<think>").replace("</judging>", "</think>")
+        return {
+            "text": text,
+            "token_count": len(tokenizer.encode(text))
+        }
+    else:
+        # Format friction datasets
+        question = example[config["dataset_config"]["columns"]["question"]]
+        thought_stream = "\n\n".join(
+            agent["thought_stream"]
+            for agent in example[config["dataset_config"]["columns"]["agent_responses"]]
+        )
+        final_answer = example[config["dataset_config"]["columns"]["final_answer"]]
+        
+        formatted_text = config["dataset_config"]["format_template"].format(
+            question=question,
+            thought_stream=thought_stream,
+            final_answer=final_answer
+        )
+        return {
+            "text": formatted_text,
+            "token_count": len(tokenizer.encode(formatted_text))
+        }
+
+
+def stack_examples(examples: List[Dict[str, Any]], max_tokens: int = 4096) -> List[str]:
+    """Stack examples up to max token limit.
+    
+    Args:
+        examples: List of examples with text and token count
+        max_tokens: Maximum number of tokens per stacked example
+        
+    Returns:
+        List of stacked examples
+    """
+    stacked_examples = []
+    current_stack = []
+    current_tokens = 0
+    
+    for example in examples:
+        # If adding this example would exceed max tokens, save current stack and start new one
+        if current_tokens + example["token_count"] > max_tokens:
+            if current_stack:
+                stacked_examples.append("".join(current_stack))
+                current_stack = []
+                current_tokens = 0
+        
+        # Add example to current stack
+        current_stack.append(example["text"])
+        current_tokens += example["token_count"]
+    
+    # Add any remaining examples in the last stack
+    if current_stack:
+        stacked_examples.append("".join(current_stack))
+    
+    return stacked_examples
+
+
 def load_config(config_path: str = None) -> Dict[str, Any]:
     """Load configuration from YAML file."""
     print_step("Loading configuration")
@@ -111,6 +185,14 @@ def load_config(config_path: str = None) -> Dict[str, Any]:
 
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
+
+    # Debug print
+    print("\nConfig structure:")
+    for key in config:
+        print(f"• {key}:")
+        if isinstance(config[key], dict):
+            for subkey in config[key]:
+                print(f"  - {subkey}: {config[key][subkey]}")
 
     # Convert numeric values
     training_config = config.get("training_config", {})
@@ -162,64 +244,170 @@ def setup_model_and_tokenizer(config: Dict[str, Any]):
     return model, tokenizer
 
 
+def analyze_dataset_lengths(dataset: Dataset, dataset_name: str, tokenizer) -> Dict[str, float]:
+    """Analyze token lengths of a dataset.
+    
+    Args:
+        dataset: The dataset to analyze
+        dataset_name: Name of the dataset for logging
+        tokenizer: Tokenizer for length calculation
+        
+    Returns:
+        Dictionary with length statistics
+    """
+    lengths = [len(tokenizer.encode(example["text"])) for example in dataset]
+    stats = {
+        "min": min(lengths),
+        "max": max(lengths),
+        "mean": mean(lengths),
+        "total_tokens": sum(lengths)
+    }
+    print(f"\n{dataset_name} Statistics:")
+    print(f"• Examples: {len(dataset)}")
+    print(f"• Min tokens: {stats['min']}")
+    print(f"• Max tokens: {stats['max']}")
+    print(f"• Mean tokens: {stats['mean']:.1f}")
+    print(f"• Total tokens: {stats['total_tokens']:,}")
+    return stats
+
+
+def calculate_token_based_weights(datasets: List[Dataset], dataset_configs: List[Dict], tokenizer) -> List[float]:
+    """Calculate dataset weights based on token counts to ensure balanced token distribution.
+    
+    Args:
+        datasets: List of datasets
+        dataset_configs: List of dataset configurations
+        tokenizer: Tokenizer for length calculation
+        
+    Returns:
+        List of adjusted weights
+    """
+    print_step("Analyzing dataset token distributions")
+    
+    # Analyze each dataset
+    stats = []
+    total_tokens = 0
+    for dataset, config in zip(datasets, dataset_configs):
+        dataset_stats = analyze_dataset_lengths(dataset, config["name"], tokenizer)
+        stats.append(dataset_stats)
+        total_tokens += dataset_stats["total_tokens"]
+    
+    # Calculate target tokens per dataset for balanced distribution
+    target_tokens_per_dataset = total_tokens / len(datasets)
+    
+    # Calculate adjustment factors
+    adjustments = [target_tokens_per_dataset / stat["total_tokens"] for stat in stats]
+    adjustment_sum = sum(adjustments)
+    
+    # Normalize to get final weights
+    weights = [adj / adjustment_sum for adj in adjustments]
+    
+    print("\nAdjusted weights for token balance:")
+    for config, weight in zip(dataset_configs, weights):
+        print(f"• {config['name']}: {weight:.2%}")
+    
+    return weights
+
+
 def load_and_prepare_dataset(config: Dict[str, Any], tokenizer) -> Dataset:
     """Load and prepare the dataset for training."""
     print_step("Loading and preparing dataset")
 
-    # Load dataset from HuggingFace
-    print(f"• Loading dataset: {config['dataset_config']['dataset_name']}")
-    dataset = load_dataset(config["dataset_config"]["dataset_name"])
+    # Load and combine datasets
+    print("• Loading and mixing datasets")
+    datasets = []
     
-    # Format conversations with 4-turn concatenation
-    print("• Formatting conversations (4 turns per example)")
-    formatted_dataset = dataset.map(
-        lambda examples, idx: format_conversation(examples, config, idx),
-        remove_columns=dataset["train"].column_names,  # Remove original columns
-        with_indices=True,  # Pass indices to format_conversation
-        batched=True,  # Process in batches
-        batch_size=4,  # Process 4 examples at a time
-        desc="Formatting conversations"
+    for dataset_config in config["dataset_config"]["datasets"]:
+        print(f"  - Loading {dataset_config['name']}")
+        dataset = load_dataset(dataset_config["name"])["train"]
+        
+        # Format the dataset based on its source
+        formatted_dataset = dataset.map(
+            lambda x: format_dataset_example(x, dataset_config["name"], config, tokenizer),
+            remove_columns=dataset.column_names,
+            desc=f"Formatting {dataset_config['name']}"
+        )
+        
+        datasets.append(formatted_dataset)
+    
+    # Calculate optimal number of examples to take from each dataset
+    total_examples = sum(len(d) for d in datasets)
+    # Target around 4000 examples total, but no more than 80% of available examples
+    target_size = min(4000, int(total_examples * 0.90))
+    print(f"\n• Target size: {target_size:,} examples (from total {total_examples:,})")
+    
+    samples_per_dataset = []
+    for dataset, dataset_config in zip(datasets, config["dataset_config"]["datasets"]):
+        # Calculate target samples using the pre-calculated weights
+        target_samples = min(
+            int(target_size * dataset_config["weight"]),
+            len(dataset)
+        )
+        samples_per_dataset.append(target_samples)
+    
+    # Print sampling plan
+    print("\nSampling plan:")
+    for config_item, samples in zip(config["dataset_config"]["datasets"], samples_per_dataset):
+        print(f"• {config_item['name']}: {samples:,} examples")
+    
+    # Sample from each dataset
+    combined_examples = []
+    for dataset, n_samples in zip(datasets, samples_per_dataset):
+        # Use the same seed for all shuffling
+        sampled = dataset.shuffle(seed=42).select(range(n_samples))
+        combined_examples.extend(sampled)
+    
+    # Shuffle combined examples
+    random.seed(42)  # Use consistent seed
+    random.shuffle(combined_examples)
+    
+    # Stack examples up to max token limit
+    print("\n• Stacking examples up to token limit")
+    print("\nDebug - Config keys:", list(config.keys()))
+    print("Debug - Config type:", type(config))
+    if "model_config" in config:
+        print("Debug - model_config keys:", list(config["model_config"].keys()))
+    else:
+        print("Debug - model_config not found!")
+        print("Debug - Full config:", config)
+    
+    stacked_texts = stack_examples(
+        combined_examples,
+        max_tokens=config["model_config"]["model_max_length"]
     )
-
-    # Shuffle dataset with fixed seed for reproducibility
-    print("\n• Shuffling dataset")
-    shuffle_seed = config["dataset_config"].get("shuffle_seed", 3407)
-    formatted_dataset = formatted_dataset.shuffle(seed=shuffle_seed)
-
-    # Create train/validation split with stratification
+    
+    # Create dataset from stacked examples
+    stacked_dataset = Dataset.from_dict({"text": stacked_texts})
+    
+    # Create train/validation split
     print("\n• Creating train/validation split")
-    split_dataset = formatted_dataset["train"].train_test_split(
-        test_size=0.1,  # 10% for validation
-        seed=shuffle_seed,  # Use same seed for reproducibility
-        shuffle=True,  # Ensure data is shuffled before splitting
+    split_dataset = stacked_dataset.train_test_split(
+        test_size=0.1,
+        seed=42,  # Use consistent seed
+        shuffle=True
     )
     
-    # Rename the test split to validation
-    formatted_dataset = DatasetDict({
+    dataset_dict = DatasetDict({
         "train": split_dataset["train"],
         "validation": split_dataset["test"]
     })
 
-    # Additional shuffling of training data
-    formatted_dataset["train"] = formatted_dataset["train"].shuffle(
-        seed=shuffle_seed  # Just use seed for reproducibility
-    )
+    # Print final statistics
+    print("\nFinal Dataset Statistics:")
+    print(f"• Original examples: {len(combined_examples):,}")
+    print(f"• Stacked examples: {len(stacked_texts):,}")
+    print(f"• Training examples: {len(dataset_dict['train']):,}")
+    print(f"• Validation examples: {len(dataset_dict['validation']):,}")
+    
+    # Print average tokens per stack
+    avg_tokens = mean(len(tokenizer.encode(text)) for text in stacked_texts)
+    print(f"• Average tokens per stack: {avg_tokens:.1f}")
+    
+    # Calculate and print total tokens
+    total_tokens = sum(len(tokenizer.encode(text)) for text in stacked_texts)
+    print(f"• Total tokens in dataset: {total_tokens:,}")
 
-    # Print dataset statistics
-    print("\nDataset Statistics:")
-    print(f"• Number of training examples: {len(formatted_dataset['train'])}")
-    print(f"• Number of validation examples: {len(formatted_dataset['validation'])}")
-    print(f"• Each example contains 4 concatenated conversations")
-
-    # Sample and print conversations
-    print("\nVerifying conversation formats:")
-    for i in range(1):  # Show 1 random example since they're longer now
-        random_idx = torch.randint(0, len(formatted_dataset["train"]), (1,)).item()
-        print(f"\n=== Random conversation example (idx={random_idx}) ===")
-        print(formatted_dataset["train"][random_idx]["text"])
-        print("=" * 50)
-
-    return formatted_dataset
+    return dataset_dict
 
 
 def create_trainer(model, tokenizer, dataset, config: Dict[str, Any]):

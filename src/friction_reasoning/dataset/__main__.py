@@ -20,8 +20,8 @@ async def main():
     try:
         await upload_to_hub(
             dataset_path=str(dataset_path),
-            repo_id="leonvanbokhorst/friction-overthinking-v2",
-            description="A dataset of multi-agent reasoning exploring friction and resistance in human experience.",
+            repo_id="leonvanbokhorst/friction-disagreement-v2",
+            description="A dataset of multi-agent reasoning exploring friction and disagreement in human experience.",
             private=False
         )
     except Exception as e:

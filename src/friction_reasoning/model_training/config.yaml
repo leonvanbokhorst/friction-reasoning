@@ -1,26 +1,34 @@
 # Model Configuration
 model_config:
-  base_model: "unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit"
-  trust_remote_code: true
-  use_flash_attention_2: true  # Added from old config
+  base_model: "unsloth/DeepSeek-R1-Distill-Qwen-7B-unsloth-bnb-4bit"
+  trust_remote_code: false
+  use_flash_attention_2: true
   torch_dtype: "bfloat16"
   device_map: "auto"
-  model_max_length: 4096  # Restored to original value
+  model_max_length: 4096
 
 # LoRA Configuration
 lora_config:
-  r: 16  # Restored to original value
-  lora_alpha: 32  # Restored to original value
+  r: 16 
+  lora_alpha: 32
   target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
   bias: "none"
   task_type: "CAUSAL_LM"
-  lora_dropout: 0.0  # Increased from 0.0 to help with regularization
+  lora_dropout: 0.0
   inference_mode: false
 
 # Dataset Configuration
 dataset_config:
-  dataset_name: "leonvanbokhorst/friction-overthinking-v2"
-  shuffle_seed: 42  # Added explicit shuffle seed
+  datasets:
+    - name: "leonvanbokhorst/friction-disagreement-v2"
+      weight: 0.35
+    - name: "leonvanbokhorst/friction-overthinking-v2"
+      weight: 0.25
+    - name: "leonvanbokhorst/reluctance-v6.1"
+      weight: 0.20
+    - name: "leonvanbokhorst/reluctance-v5.3"
+      weight: 0.20
+  shuffle_seed: 42
   columns:
     question: "question"
     agent_responses: "agent_responses"
@@ -38,33 +46,34 @@ dataset_config:
     </think>
     {final_answer}
     <|im_end|>
+
 # Training Configuration
 training_config:
   learning_rate: 2e-4
-  num_train_epochs: 5  # Reduced from 5 to prevent overfitting
-  per_device_train_batch_size: 2  # Restored to original value
-  gradient_accumulation_steps: 4  # Restored to original value
+  num_train_epochs: 7
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
   warmup_ratio: 0.1
   logging_steps: 10
   evaluation_strategy: "steps"
-  eval_steps: 50  # More frequent evaluation to catch overfitting earlier
+  eval_steps: 50
   save_strategy: "steps"
-  save_steps: 50  # More frequent saving to capture best model
-  save_total_limit: 5  # Increased to keep more checkpoints
+  save_steps: 50
+  save_total_limit: 5
   load_best_model_at_end: true
   metric_for_best_model: "eval_loss"
   greater_is_better: false
-  early_stopping_patience: 3  # Reduced patience to stop earlier when overfitting
-  early_stopping_threshold: 0.005  # More sensitive threshold
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.005
   gradient_checkpointing: true
   optim: "adamw_8bit"
   fp16: false
   bf16: true
   report_to: ["wandb"]
-  weight_decay: 0.01  # Added L2 regularization
-  max_grad_norm: 0.5  # Added gradient clipping
+  weight_decay: 0.01
+  max_grad_norm: 0.5
 
 # Output Configuration
 output_config:
-  output_dir: "models/friction_reasoning"  # Changed to match our project structure
-  logging_dir: "logs/friction_reasoning"  # Changed to match our project structure 
+  output_dir: "models/friction_reasoning"
+  logging_dir: "logs/friction_reasoning" 

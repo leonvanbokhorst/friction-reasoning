@@ -10,4 +10,4 @@ Your thoughts:
 User question: 
 {question}
 
-Explore the mechanism of disagreement. Be blunt. Respond in first person like you are thinking out loud about the user in third person in a CONSICISE manner. ONE PARAGRAPH.
+Explore the mechanism of disagreement. Be concrete. Respond in first person like you are thinking out loud about the user in third person in a CONSICISE manner. ONE PARAGRAPH.

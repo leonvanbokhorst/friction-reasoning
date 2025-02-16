@@ -85,8 +85,8 @@ task_ids:
 
 async def upload_to_hub(
     dataset_path: str,
-    repo_id: str = "leonvanbokhorst/friction-overthinking-v2",
-    description: str = "A dataset of multi-agent reasoning with designed friction points.",
+    repo_id: str = "leonvanbokhorst/friction-disagreement-v2",
+    description: str = "A dataset of multi-agent reasoning with designed friction points for disagreement.",
     private: bool = False
 ) -> None:
     """Upload a dataset to Hugging Face Hub.

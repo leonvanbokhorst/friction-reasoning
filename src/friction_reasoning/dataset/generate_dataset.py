@@ -6,7 +6,7 @@ import random
 import time
 import traceback
 import os
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 from pathlib import Path
 from tqdm import tqdm
 from statistics import mean, median
@@ -295,7 +295,7 @@ async def generate_batch(
 
 async def generate_dataset(num_examples: int = 1200, batch_size: int = 10) -> List[Dict]:
     """Generate the full dataset in batches."""
-    llm = LLMClient(model="gpt-4o", temperature=0.7)
+    llm = LLMClient(model="gpt-4o-mini", temperature=0.7)
     dataset = []
     seen_ids = set()  # Track unique IDs
     stats = DatasetStats()
@@ -430,4 +430,85 @@ async def main():
         print("\nDataset generation complete!")
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())
+
+DISAGREEMENT_CONFIG = {
+    "dataset_name": "deepseek-r1-disagree-v1",
+    "description": "A dataset focused on productive disagreement as digital friction",
+    "agent_configs": {
+        "problem_framer": {
+            "temperature": 0.8,
+            "focus": "disagreement_patterns",
+            "thought_style": "challenge_assumptions"
+        },
+        "mechanism_explorer": {
+            "temperature": 0.7,
+            "focus": "resistance_analysis",
+            "thought_style": "trace_tension"
+        },
+        "perspective_generator": {
+            "temperature": 0.9,
+            "focus": "reframe_agreement",
+            "thought_style": "embrace_complexity"
+        }
+    },
+    "interaction_patterns": [
+        {
+            "type": "challenge_assumption",
+            "description": "Agent challenges a common assumption about digital agreement"
+        },
+        {
+            "type": "explore_tension",
+            "description": "Agent explores the value in disagreement and tension"
+        },
+        {
+            "type": "reframe_negative",
+            "description": "Agent reframes seemingly negative interactions as valuable"
+        }
+    ]
+}
+
+def generate_disagreement_dataset(
+    base_prompts: Dict[str, str],
+    output_path: Path,
+    num_samples: int = 1000
+) -> None:
+    """Generate dataset focused on disagreement as productive friction.
+    
+    Args:
+        base_prompts: Dictionary of base prompts for each agent
+        output_path: Where to save the dataset
+        num_samples: Number of samples to generate
+    """
+    dataset = []
+    
+    for _ in range(num_samples):
+        sample = {
+            "metadata": {
+                "focus": "disagreement",
+                "interaction_type": random.choice(
+                    DISAGREEMENT_CONFIG["interaction_patterns"]
+                )["type"]
+            },
+            "agents": []
+        }
+        
+        # Generate agent responses with disagreement focus
+        for agent_type, config in DISAGREEMENT_CONFIG["agent_configs"].items():
+            response = generate_agent_response(
+                agent_type=agent_type,
+                base_prompt=base_prompts[agent_type],
+                temperature=config["temperature"],
+                focus=config["focus"],
+                thought_style=config["thought_style"]
+            )
+            sample["agents"].append({
+                "type": agent_type,
+                "response": response,
+                "config": config
+            })
+            
+        dataset.append(sample)
+    
+    # Save dataset
+    output_path.write_text(json.dumps(dataset, indent=2)) 

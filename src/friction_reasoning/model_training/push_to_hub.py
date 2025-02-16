@@ -6,7 +6,7 @@ from pathlib import Path
 from huggingface_hub import HfApi
 
 def push_gguf_to_hub(
-    hub_repo="leonvanbokhorst/deepseek-r1-overthinking",
+    hub_repo="leonvanbokhorst/deepseek-r1-mixture-of-friction",
     model_dir="model_gguf"
 ):
     """Push GGUF models to HuggingFace Hub."""
@@ -35,7 +35,7 @@ def push_gguf_to_hub(
             continue
             
         # Create a renamed copy for upload
-        hub_filename = f"deepseek-r1-overthinking-{quant}.gguf"
+        hub_filename = f"deepseek-r1-mixture-of-friction-{quant}.gguf"
         temp_path = model_dir / quant / hub_filename
         print(f"\nCopying {src_path.name} to {hub_filename}...")
         try:
