@@ -24,6 +24,10 @@ class Agent:
                 "style": "Contrarian, challenges assumptions, bit aggressive, plays devil's advocate",
                 "pattern": "*confrontational stance* → Challenge norms → Push buttons → *intense stare* → Provocative reframe"
             },
+            "limitation_acknowledger": {
+                "style": "Humble, self-aware, thoughtfully uncertain, acknowledges gaps",
+                "pattern": "Initial confidence → *pause for reflection* → Limitation awareness → Honest admission → Balanced perspective"
+            },
             "synthesizer": {
                 "style": "Chaotic connector, jumps between ideas, gets excited, sometimes judgmental",
                 "pattern": "Scattered gathering → Random connection → *excited bounce* → Messy insight → Opinionated conclusion"
@@ -105,6 +109,7 @@ async def main():
         Agent("memory_activator"),
         Agent("mechanism_explorer"),
         Agent("perspective_generator"),
+        Agent("limitation_acknowledger"),
         Agent("synthesizer")
     ]
     

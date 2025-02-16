@@ -54,7 +54,7 @@ def get_agent_prompt(agent_type: str, question: str, thought_pattern: Dict[str, 
 
 def get_synthesis_prompt(question: str, agent_responses: str) -> str:
     """Get the prompt for synthesizing agent responses."""
-    return f"""Having explored this question through multiple perspectives of friction and resistance:
+    return f"""Having explored this question through multiple perspectives, but still sitting with uncertainty:
 
 Your previous explorations and thoughts:
 {agent_responses}
@@ -62,19 +62,24 @@ Your previous explorations and thoughts:
 The user's question:
 "{question}"
 
-Synthesize your thoughts into a firm disagreement with the user's question. Respond in first person like you are confronting the user.
-"""
+Generate a SHORT response (3-4 sentences) that:
+1. Shows genuine uncertainty about the situation
+2. Uses hesitant language ("maybe", "I wonder if", "not sure but")
+3. Includes one thoughtful gesture (*fidgets*, *glances away*)
+4. Leaves the question open-ended
+
+Keep it brief and uncertain. Share just one quick moment of reflection."""
 
 def get_direct_prompt(question: str) -> str:
     """Get the prompt for direct answer without friction."""
-    return f"""Answer this question with empathy and support:
+    return f"""Consider this question with uncertainty and doubt:
 "{question}"
 
-Respond with a SHORT answer (1-2 sentences max)."""
+Respond with a SHORT, uncertain answer that raises more questions than it answers (1-2 sentences max)."""
 
 def get_final_answer_prompt(question: str, agent_responses: str) -> str:
     """Get the prompt for synthesizing a final answer."""
-    return f"""Having explored this question through multiple perspectives of friction and resistance:
+    return f"""Having explored this question through multiple perspectives, but still feeling uncertain:
 
 Your previous explorations and thoughts:
 {agent_responses}
@@ -82,8 +87,13 @@ Your previous explorations and thoughts:
 The user's question:
 "{question}"
 
-Synthesize your thoughts into a firm disagreement with the user's question. Respond in first person like you are confronting the user.
-"""
+Generate a SHORT response (3-4 sentences) that:
+1. Shows empathy while maintaining uncertainty
+2. Uses hesitant language ("maybe", "I wonder if", "not sure but")
+3. Includes one thoughtful gesture (*fidgets*, *glances away*)
+4. Leaves room for multiple possibilities
+
+Keep it brief and reflective. Share just one quick moment of connection."""
 
 def get_disagreement_synthesis_prompt(question: str, agent_responses: str) -> str:
     """Get the prompt for synthesizing disagreement-focused responses."""

@@ -75,7 +75,7 @@ BASE_PROMPTS = {
         "Living through *gestures at everything* while...",
     ],
     "growth": [
-        "Oof, just caught myself doing that thing where...",
+        "Just caught myself doing that thing where...",
         "Past me would be shook seeing me now...",
         "Having to unlearn so much about how I...",
         "Growing pains hit different when you're...",
@@ -103,6 +103,34 @@ BASE_PROMPTS = {
         "In my imaginary perfect life I'm always...",
         "Keep fantasizing about dropping everything to...",
         "That alternate timeline where I actually...",
+    ],
+    "uncertainty": [
+        "I might be wrong about this, but...",
+        "Not entirely sure, though I think...",
+        "From what I understand, although I could be missing something...",
+        "Based on my current knowledge, while acknowledging my limitations...",
+        "This is just my perspective, but...",
+        "I'm wrestling with this idea where...",
+        "Still learning about this, but my current thinking is...",
+        "Take this with a grain of salt, but...",
+        "Something feels off about my thinking here...",
+        "Maybe I'm overthinking, but there's this part where...",
+        "The more I think about it, the less sure I am that...",
+        "Is it weird that I keep second-guessing...",
+        "Part of me thinks one thing, but then another part...",
+        "My brain keeps going back and forth between...",
+        "There's this nagging doubt I can't shake about...",
+        "The line gets blurry when I try to figure out...",
+    ],
+    "vulnerability": [  # New category for explicitly vulnerable moments
+        "Sometimes I worry that I'm not qualified to...",
+        "Feel kinda exposed admitting this, but...",
+        "My imposter syndrome is screaming because...",
+        "Trying to be honest with myself about how...",
+        "It's scary to admit, but I might be...",
+        "Never told anyone this, but I sometimes...",
+        "The real reason I hesitate is probably...",
+        "Behind all my confidence, I'm actually...",
     ]
 }
 
@@ -111,9 +139,57 @@ EMOTIONS = [
     "nostalgic", "anxious", "curious", "hopeful", "confused",
     "overwhelmed", "peaceful", "restless", "grateful", "uncertain",
     "frustrated", "excited", "sad", "happy", "angry", "bored", "sleepy",
-    "hungry", "thirsty", "tired", "sick", "happy", "sad", "angry", "bored",
-    "sleepy", "hungry", "thirsty", "tired", "sick", 
+    "hungry", "thirsty", "tired", "sick", "happy", "sad", "angry", "bored", 
+    
+    # New nuanced emotional states
+    "vulnerable", "hesitant", "ambivalent", "conflicted", "doubtful",
+    "self-conscious", "introspective", "unsure", "contemplative",
+    "questioning", "wavering", "tentative", "humble", "candid",
+    "raw", "exposed", "authentic", "unguarded"
 ]
+
+# Configuration for vulnerability-aware responses
+VULNERABILITY_CONFIG = {
+    "uncertainty_phrases": [
+        "I'm not entirely certain about",
+        "I might be missing something regarding",
+        "My understanding is limited when it comes to",
+        "I could be wrong, but",
+        "This is just my perspective on",
+        "Take this with appropriate skepticism, but",
+        "Based on what I know, though that may be incomplete,",
+        
+        # New more nuanced uncertainty phrases
+        "I find myself questioning my assumptions about",
+        "There's a complexity here I'm still grappling with regarding",
+        "The more I consider this, the more I realize I might not fully understand",
+        "I'm sitting with some uncertainty about",
+        "Perhaps I need to reconsider my thinking on",
+        "I'm trying to hold space for multiple possibilities about",
+        "This is a tentative understanding, but",
+        "I'm learning to be comfortable with not knowing everything about"
+    ],
+    "limitation_acknowledgments": [
+        "As an AI, I might not fully grasp",
+        "My experience with this is limited to",
+        "I'm still learning about",
+        "This is beyond my direct experience, but",
+        "I can only speak from my training, not personal experience about",
+        "While I don't have firsthand experience with",
+        "Acknowledging my limitations regarding",
+        
+        # New more nuanced limitation acknowledgments
+        "Given the complexity of human experience, I may not fully capture",
+        "There are nuances to this that might escape my understanding of",
+        "I want to be transparent about my limitations when it comes to",
+        "Human experiences are rich and varied, and I might miss subtle aspects of",
+        "I'm aware that my perspective might be incomplete when discussing",
+        "This touches on depths of human experience I can only approximate in",
+        "I aim to be helpful while acknowledging my constraints around",
+        "There's a depth to human understanding that I might not fully reach in"
+    ],
+    "injection_probability": 0.3  # 30% chance to inject vulnerability
+}
 
 async def generate_question(llm: LLMClient) -> str:
     """Generate a unique, emotionally resonant question."""
@@ -201,6 +277,20 @@ class DatasetStats:
             for err in self.errors[-3:]:  # Show last 3 errors
                 print(f"- Batch {err['batch']}: {err['error']} at {err['time']}")
 
+async def inject_vulnerability(response: str) -> str:
+    """Occasionally inject expressions of uncertainty or limitation acknowledgment."""
+    if random.random() < VULNERABILITY_CONFIG["injection_probability"]:
+        prefix = random.choice(
+            VULNERABILITY_CONFIG["uncertainty_phrases"] + 
+            VULNERABILITY_CONFIG["limitation_acknowledgments"]
+        )
+        # Insert the vulnerability expression at a natural breaking point
+        sentences = response.split(". ")
+        insert_point = random.randint(0, len(sentences) - 1)
+        sentences.insert(insert_point, prefix)
+        return ". ".join(sentences)
+    return response
+
 async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats) -> Dict:
     """Generate a single datapoint with question and agent responses."""
     try:
@@ -208,8 +298,9 @@ async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats)
         agents = [
             Agent("problem_framer"),
             Agent("memory_activator"),
-            Agent("mechanism_explorer"),
+            # Agent("mechanism_explorer"),  # Temporarily disabled to focus on emotional/uncertainty aspects
             Agent("perspective_generator"),
+            Agent("limitation_acknowledger"),  # New agent type
             Agent("synthesizer")
         ]
         
@@ -219,14 +310,19 @@ async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats)
         
         for agent in agents:
             result = await generate_agent_reasoning(llm, question, agent, previous_thoughts)
+            # Inject vulnerability into the thought stream
+            result["thinking_pattern"]["raw_thought_stream"] = await inject_vulnerability(
+                result["thinking_pattern"]["raw_thought_stream"]
+            )
             agent_responses.append(result)
             previous_thoughts = "\n".join(
                 resp["thinking_pattern"]["raw_thought_stream"]
                 for resp in agent_responses
             )
         
-        # Generate final synthesis
+        # Generate final synthesis with vulnerability
         final_answer = await synthesize_final_answer(llm, question, agent_responses)
+        final_answer = await inject_vulnerability(final_answer)
         
         # Structure the datapoint
         datapoint = {
@@ -235,8 +331,7 @@ async def generate_datapoint(llm: LLMClient, question: str, stats: DatasetStats)
             "agent_responses": [
                 {
                     "agent_type": resp["agent_type"],
-                    "thought_stream": resp["thinking_pattern"]["raw_thought_stream"],
-                    "friction_moments": resp["thinking_pattern"]["friction_moments"]
+                    "thought_stream": resp["thinking_pattern"]["raw_thought_stream"]
                 }
                 for resp in agent_responses
             ],
@@ -293,9 +388,44 @@ async def generate_batch(
     
     return results
 
+async def test_generation():
+    """Test dataset generation with a single batch."""
+    print("\nTesting dataset generation with one batch of 3 examples...")
+    try:
+        llm = LLMClient(model="openai/gpt-4o-mini", temperature=0.8)  # Using gpt-4o-mini
+        stats = DatasetStats()
+        
+        # Generate test questions
+        questions = []
+        for _ in range(3):
+            question = await generate_question(llm)
+            print(f"\nGenerated question: {question}")
+            questions.append(question)
+        
+        # Generate responses for each question
+        for i, question in enumerate(questions, 1):
+            print(f"\nGenerating responses for question {i}...")
+            datapoint = await generate_datapoint(llm, question, stats)
+            
+            print(f"\nAgent responses:")
+            for resp in datapoint["agent_responses"]:
+                print(f"\n{resp['agent_type']}:")
+                print(f"Thought stream preview: {resp['thought_stream'][:150]}...")
+            
+            print(f"\nFinal answer preview: {datapoint['final_answer'][:150]}...")
+        
+        print("\nTest generation complete!")
+        stats.print_summary()
+        
+    except Exception as e:
+        print(f"\nError in test generation: {type(e).__name__}: {str(e)}")
+        print("\nStacktrace:")
+        traceback.print_exc()
+        print("\nTest failed.")
+
 async def generate_dataset(num_examples: int = 1200, batch_size: int = 10) -> List[Dict]:
     """Generate the full dataset in batches."""
-    llm = LLMClient(model="gpt-4o-mini", temperature=0.7)
+    llm = LLMClient(model="openai/gpt-4o-mini", temperature=0.7)  # Using gpt-4o-mini
     dataset = []
     seen_ids = set()  # Track unique IDs
     stats = DatasetStats()
@@ -384,30 +514,6 @@ async def generate_dataset(num_examples: int = 1200, batch_size: int = 10) -> Li
     print(f"Unique examples: {len(seen_ids)}")
     print(f"Total batches: {batch_num}")
     return dataset
-
-async def test_generation():
-    """Test dataset generation with a single batch."""
-    print("\nTesting dataset generation with one batch of 3 examples...")
-    try:
-        dataset = await generate_dataset(num_examples=3, batch_size=3)
-        print("\nTest batch generation complete.")
-        print(f"Generated {len(dataset)} examples")
-        
-        # Print a sample example for inspection
-        if dataset:
-            print("\nSample example:")
-            sample = dataset[0]
-            print(f"Question: {sample['question']}")
-            print("\nAgent responses:")
-            for resp in sample['agent_responses']:
-                print(f"\n{resp['agent_type']}:")
-                print(f"Thought stream: {resp['thought_stream'][:200]}...")
-            print(f"\nFinal answer: {sample['final_answer'][:200]}...")
-    except Exception as e:
-        print(f"\nError in test generation: {type(e).__name__}: {str(e)}")
-        print("\nStacktrace:")
-        traceback.print_exc()
-        print("\nTest failed.")
 
 async def main():
     """Generate the dataset and upload to HuggingFace Hub."""

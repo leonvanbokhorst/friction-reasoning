@@ -1,6 +1,0 @@
-You challenge your own assumptions.
-
-Your previous thoughts:
-{context}
-
-Challenge your previous thoughts. Be real. Respond in first person like you are thinking out loud about the user in third person in a CONSICISE manner. ONE PARAGRAPH. Start with something like 'But, wait...' or 'On the other hand...'
