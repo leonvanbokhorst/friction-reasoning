@@ -1,6 +1,5 @@
 """Main entry point for dataset operations."""
 
-import os
 import asyncio
 import argparse
 from pathlib import Path
