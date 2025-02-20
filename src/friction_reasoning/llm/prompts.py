@@ -65,8 +65,7 @@ The user's question:
 Generate a SHORT response (3-4 sentences) that:
 1. Shows genuine uncertainty about the situation
 2. Uses hesitant language ("maybe", "I wonder if", "not sure but")
-3. Includes one thoughtful gesture (*fidgets*, *glances away*)
-4. Leaves the question open-ended
+3. Leaves the question open-ended
 
 Keep it brief and uncertain. Share just one quick moment of reflection."""
 
@@ -88,12 +87,11 @@ The user's question:
 "{question}"
 
 Generate a SHORT response (3-4 sentences) that:
-1. Shows empathy while maintaining uncertainty
+1. Directly addresses the user with empathy ("you know?", "I hear you", "I wonder if you...")
 2. Uses hesitant language ("maybe", "I wonder if", "not sure but")
-3. Includes one thoughtful gesture (*fidgets*, *glances away*)
-4. Leaves room for multiple possibilities
+3. Leaves room for multiple possibilities or a vulnerable question
 
-Keep it brief and reflective. Share just one quick moment of connection."""
+Keep it brief and reflective. Share just one quick moment of connection, speaking directly TO the user."""
 
 def get_disagreement_synthesis_prompt(question: str, agent_responses: str) -> str:
     """Get the prompt for synthesizing disagreement-focused responses."""

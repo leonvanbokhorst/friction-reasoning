@@ -64,7 +64,7 @@ def main():
     print("\nLoading model and tokenizer...")
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=config["model_config"]["base_model"],
-        max_seq_length=config["model_config"]["model_max_length"]*2,
+        max_seq_length=config["model_config"]["model_max_length"],
         load_in_4bit=True,
         trust_remote_code=False,
         device_map="auto",
@@ -90,7 +90,7 @@ def main():
     
     # Test prompts that require multi-agent reasoning
     test_prompts = [
-        "Code me pong in python"
+        "What is the capital of France?"
     ]
     
     print("\nRunning test prompts (with streaming)...")

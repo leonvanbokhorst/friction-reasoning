@@ -83,10 +83,11 @@ def format_conversation(examples: Dict[str, Any], config: Dict[str, Any], indice
                 turn = (
                     "<|im_start|>user\n"
                     f"{question}\n"
-                    "<|im_end|><|im_start|>assistant\n"
+                    "<|im_end|>\n"
+                    "<|im_start|>assistant\n"
                     "<think>\n"
                     f"{thought_stream}\n"
-                    "</think>\n"
+                    "</think>\n\n"
                     f"{final_answer}\n"
                     "<|im_end|>"
                 )
@@ -333,7 +334,7 @@ def load_and_prepare_dataset(config: Dict[str, Any], tokenizer) -> Dataset:
     # Calculate optimal number of examples to take from each dataset
     total_examples = sum(len(d) for d in datasets)
     # Target around 4000 examples total, but no more than 80% of available examples
-    target_size = min(4000, int(total_examples * 0.90))
+    target_size = min(6000, int(total_examples * 0.9))
     print(f"\n• Target size: {target_size:,} examples (from total {total_examples:,})")
     
     samples_per_dataset = []
@@ -428,7 +429,7 @@ def create_trainer(model, tokenizer, dataset, config: Dict[str, Any]):
             return_tensors="pt",
             label_pad_token_id=-100,  # Keep -100 as it's used by train_on_responses_only
         ),
-        dataset_num_proc=2,
+        dataset_num_proc=1,  # Changed from 2 to 1 to avoid multiprocessing issues
         packing=False,
         args=UnslothTrainingArguments(
             per_device_train_batch_size=config["training_config"]["per_device_train_batch_size"],
@@ -442,7 +443,7 @@ def create_trainer(model, tokenizer, dataset, config: Dict[str, Any]):
             logging_steps=config["training_config"]["logging_steps"],
             optim="adamw_8bit",
             lr_scheduler_type="cosine",
-            seed=config["dataset_config"].get("shuffle_seed", 3407),  # Use consistent seed
+            seed=config["dataset_config"].get("shuffle_seed", 42),  # Use consistent seed
             output_dir=config["output_config"]["output_dir"],
             logging_dir=config["output_config"]["logging_dir"],
             group_by_length=True,
@@ -450,7 +451,7 @@ def create_trainer(model, tokenizer, dataset, config: Dict[str, Any]):
             weight_decay=config["training_config"].get("weight_decay", 0.01),
             remove_unused_columns=True,
             prediction_loss_only=True,
-            eval_strategy="steps",
+            evaluation_strategy="steps",
             eval_steps=config["training_config"]["eval_steps"],
             save_strategy=config["training_config"]["save_strategy"],
             save_steps=config["training_config"]["save_steps"],
@@ -458,7 +459,7 @@ def create_trainer(model, tokenizer, dataset, config: Dict[str, Any]):
             load_best_model_at_end=config["training_config"]["load_best_model_at_end"],
             metric_for_best_model=config["training_config"]["metric_for_best_model"],
             greater_is_better=config["training_config"]["greater_is_better"],
-            dataloader_num_workers=2,
+            dataloader_num_workers=2, 
             dataloader_pin_memory=True,
         ),
         callbacks=[

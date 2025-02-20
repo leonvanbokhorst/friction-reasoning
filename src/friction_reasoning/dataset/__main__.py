@@ -16,10 +16,16 @@ async def main():
                       help='Number of examples to generate (default: 1200)')
     parser.add_argument('--upload', action='store_true',
                       help='Upload dataset to HuggingFace Hub after generation')
+    parser.add_argument('--repo_id', type=str,
+                      default="leonvanbokhorst/friction-uncertainty-v2",
+                      help='HuggingFace Hub repository ID')
+    parser.add_argument('--data_dir', type=str,
+                      default="data/friction_reasoning",
+                      help='Directory containing the dataset files')
     args = parser.parse_args()
     
     # Set up paths
-    data_dir = Path("data/friction_reasoning")
+    data_dir = Path(args.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     dataset_path = data_dir / "friction_reasoning_dataset.jsonl"
     
@@ -36,8 +42,8 @@ async def main():
         try:
             await upload_to_hub(
                 dataset_path=str(dataset_path),
-                repo_id="leonvanbokhorst/friction-disagreement-v2",
-                description="A dataset of multi-agent reasoning exploring friction and disagreement in human experience.",
+                repo_id=args.repo_id,
+                description="A dataset of multi-agent reasoning exploring uncertainty and vulnerability in human experience.",
                 private=False
             )
             print("Upload complete!")

@@ -20,8 +20,8 @@ def push_gguf_to_hub(
         raise ValueError(f"Model directory {model_dir} does not exist!")
     
     quantizations = [
-        "q4_k_m",  # Recommended balance of size/speed
-        #"q5_k_m",  # Higher quality than q4_k_m
+        #"q4_k_m",  # Recommended balance of size/speed
+        "q5_k_m",  # Higher quality than q4_k_m
         #"q8_0",    # High resource but high quality
     ]
     

@@ -9,8 +9,8 @@ model_config:
 
 # LoRA Configuration
 lora_config:
-  r: 16 
-  lora_alpha: 32
+  r: 32 
+  lora_alpha: 64
   target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
   bias: "none"
   task_type: "CAUSAL_LM"
@@ -21,13 +21,15 @@ lora_config:
 dataset_config:
   datasets:
     - name: "leonvanbokhorst/friction-disagreement-v2"
-      weight: 0.35
-    - name: "leonvanbokhorst/friction-overthinking-v2"
       weight: 0.25
+    - name: "leonvanbokhorst/friction-overthinking-v2"
+      weight: 0.10
     - name: "leonvanbokhorst/reluctance-v6.1"
-      weight: 0.20
+      weight: 0.25
     - name: "leonvanbokhorst/reluctance-v5.3"
-      weight: 0.20
+      weight: 0.15
+    - name: "leonvanbokhorst/friction-uncertainty-v2"
+      weight: 0.25
   shuffle_seed: 42
   columns:
     question: "question"

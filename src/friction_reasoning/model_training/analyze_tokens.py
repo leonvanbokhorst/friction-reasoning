@@ -16,8 +16,9 @@ tokenizer = AutoTokenizer.from_pretrained('unsloth/DeepSeek-R1-Distill-Qwen-7B-u
 # Dataset configs with new weights
 DATASET_CONFIGS = [
     {"name": "leonvanbokhorst/friction-disagreement-v2", "key": "disagreement", "weight": 0.085},
-    {"name": "leonvanbokhorst/friction-overthinking-v2", "key": "overthinking", "weight": 0.095},
-    {"name": "leonvanbokhorst/reluctance-v6.1", "key": "reluctance", "weight": 0.82}
+    {"name": "leonvanbokhorst/friction-overthinking-v2", "key": "overthinking", "weight": 0.045},
+    {"name": "leonvanbokhorst/reluctance-v6.1", "key": "reluctance", "weight": 1.0},
+    {"name": "leonvanbokhorst/friction-uncertainty-v2", "key": "uncertainty", "weight": 0.15}
 ]
 
 # Load datasets

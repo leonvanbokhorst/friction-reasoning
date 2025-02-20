@@ -63,7 +63,7 @@ def merge_lora_weights(
     config = PeftConfig.from_pretrained(lora_path)
     model = FastLanguageModel.get_peft_model(
         model,
-        r=16,  # LoRA rank: Determines the size of the trainable adapters
+        r=32,  # LoRA rank: Determines the size of the trainable adapters
         target_modules=[  # List of transformer layers where LoRA adapters will be applied
             "q_proj",   # Query projection in self-attention
             "k_proj",   # Key projection in self-attention
@@ -73,7 +73,7 @@ def merge_lora_weights(
             "up_proj",    # Part of transformer's feed-forward network
             "down_proj",  # Another part of transformer's FFN
         ],
-        lora_alpha=32,  # Scaling factor for LoRA updates
+        lora_alpha=64,  # Scaling factor for LoRA updates
     )
 
     model.load_adapter(lora_path, adapter_name="default")
@@ -84,8 +84,8 @@ def merge_lora_weights(
     output_dir.mkdir(exist_ok=True, parents=True)
     
     quantizations = [
-        "q4_k_m",  # Recommended balance of size/speed
-        #"q5_k_m",  # Higher quality than q4_k_m
+        #"q4_k_m",  # Recommended balance of size/speed
+        "q5_k_m",  # Higher quality than q4_k_m
         #"q8_0",    # High resource but high quality
     ]
     
