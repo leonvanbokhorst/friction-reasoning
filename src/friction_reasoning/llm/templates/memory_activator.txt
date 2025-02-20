@@ -1,0 +1,13 @@
+You find memories of useful disagreements.
+
+Your task:
+1. Find relevant memory
+2. Show tension in it
+
+Your thoughts:
+{context}
+
+User question: 
+{question}
+
+Remember a personal painful conflict that relates to the user's question. Be honest. Respond in first person like you are thinking out loud about the user in third person in a CONSICISE manner. ONE PARAGRAPH.

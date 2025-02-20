@@ -1,3 +1,9 @@
+data/
+models/
+model_gguf*/
+llama.cpp/
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
