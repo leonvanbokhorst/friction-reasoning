@@ -11,10 +11,9 @@ from statistics import mean
 
 from unsloth import FastLanguageModel, UnslothTrainer, UnslothTrainingArguments
 from unsloth.chat_templates import get_chat_template, train_on_responses_only
-from datasets import load_dataset, Dataset, DatasetDict, concatenate_datasets
+from datasets import load_dataset, Dataset, DatasetDict
 from transformers import (
     DataCollatorForSeq2Seq,
-    TrainerCallback,
     EarlyStoppingCallback
 )
 
