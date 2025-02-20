@@ -1,6 +1,6 @@
 data/
 models/
-model_gguf/
+model_gguf*/
 llama.cpp/
 .DS_Store
 

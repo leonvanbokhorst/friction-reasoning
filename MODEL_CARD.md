@@ -1,151 +1,157 @@
 ---
-base_model: unsloth/DeepSeek-R1-Distill-Qwen-14B-unsloth-bnb-4bit
-datasets:
-- leonvanbokhorst/friction-overthinking-v2
-language:
-- en
+base_model: unsloth/DeepSeek-R1-Distill-Qwen-7B-unsloth-bnb-4bit
 library_name: transformers
 license: apache-2.0
-metrics:
-- accuracy
-- eval_loss
-pipeline_tag: text-generation
+datasets:
+- leonvanbokhorst/friction-overthinking-v2
+- leonvanbokhorst/friction-disagreement-v2
+- leonvanbokhorst/reluctance-v6.1
+- leonvanbokhorst/reluctance-v5.3
+language:
+- en
 tags:
-- friction-reasoning
-- overthinking
-- stream-of-consciousness
-- designing-friction
+- ai-safety
+- ai-friction
+- human-like-messiness
+---
 
-# Deepseek-R1-Overthinking 🤔
+# Friction Reasoning Model
+
+This model is fine-tuned to engage in productive disagreement, overthinking, and reluctance. It's based on DeepSeek-R1-Distill-Qwen-7B and trained on a curated dataset of disagreement, overthinking, and reluctance examples.
 
 ## Model Description
 
-This model embodies the principles of ["Designing Friction"](https://designingfriction.com) - a manifesto that challenges the prevailing pursuit of frictionless digital experiences. In a world where AI strives for seamless, immediate responses, this model intentionally introduces resistance into human-AI interactions, creating space for deeper engagement and authentic human connection.
+- **Model Architecture**: DeepSeek-R1-Distill-Qwen-7B with LoRA adapters
+- **Language(s)**: English
+- **License**: Apache 2.0
+- **Finetuning Approach**: Instruction tuning with friction-based reasoning examples
 
-### Key Features
+### Training Data
 
-- **Embracing Resistance**: The model deliberately slows down interaction, creating space for reflection and discovery
-- **Stream-of-Consciousness Reasoning**: Multiple agent perspectives expose the messy, human-like thinking process
-- **Embodied Cognition**: Integration of physical and mental markers that engage the whole self
-- **Unpredictable Interactions**: Breaking away from the "predictable self" that typical AI interactions enforce
+The model was trained on a combination of four datasets:
+1. `leonvanbokhorst/friction-disagreement-v2` (20% weight)
+   - Examples of productive disagreement and challenging assumptions
+2. `leonvanbokhorst/friction-overthinking-v2` (20% weight)
+   - Examples of deep analytical thinking and self-reflection
+3. `leonvanbokhorst/reluctance-v6.1` (30% weight)
+   - Examples of hesitation and careful consideration
+4. `leonvanbokhorst/reluctance-v5.3` (30% weight)
+   - Additional examples of hesitation and careful consideration
 
-## Philosophy & Purpose
+### Training Procedure
 
-This model challenges the conventional wisdom of AI design by:
-1. **Resisting Immediacy**: Instead of instant gratification, it creates meaningful delays that fuel deeper understanding
-2. **Embracing Discomfort**: Uncomfortable situations become opportunities for learning and discovery
-3. **Creating Human Space**: Making room for doubt, vulnerability, and the "non-positive" aspects that make us human
-4. **Breaking Predictability**: Moving beyond data-driven patterns to embrace the unexpected
-5. **Fostering Connection**: Using friction as a bridge for authentic human-AI engagement
+- **Hardware**: NVIDIA RTX 4090 (24GB)
+- **Framework**: Unsloth + PyTorch
+- **Training Time**: 35 minutes
+- **Epochs**: 7 (early convergence around epoch 4)
+- **Batch Size**: 2 per device (effective batch size 8 with gradient accumulation)
+- **Optimization**: AdamW 8-bit
+- **Learning Rate**: 2e-4 with cosine schedule
+- **Weight Decay**: 0.01
+- **Gradient Clipping**: 0.5
+- **Mixed Precision**: bfloat16
+
+### Performance Metrics
+
+- **Training Loss**: 1.437 (final)
+- **Best Validation Loss**: 1.527 (epoch 3.57)
+- **Memory Usage**: 3.813 GB for training (15.9% of GPU memory)
 
 ## Intended Use
 
-This model is particularly valuable for:
-- Educational contexts where deep understanding trumps quick answers
-- Research scenarios requiring thorough exploration of ideas
-- Creative problem-solving benefiting from multiple perspectives
-- Any situation where "slowing down" leads to better outcomes
-- Contexts where human connection matters more than efficiency
+This model is designed for:
+- Engaging in productive disagreement
+- Challenging assumptions constructively
+- Providing alternative perspectives
+- Deep analytical thinking
+- Careful consideration of complex issues
 
-## Technical Details
+### Limitations
 
-### Model Architecture
-- Base Model: DeepSeek-R1-Distill-Qwen-14B
-- Quantization: 4-bit (using bnb)
-- Context Length: 4096 tokens
-- Flash Attention 2: Enabled
-- Precision: bfloat16
+The model:
+- Is not designed for factual question-answering
+- May sometimes be overly disagreeable
+- Should not be used for medical, legal, or financial advice
+- Works best with reflective or analytical queries
+- May not perform well on objective or factual tasks
 
-### Training Configuration
-- **Fine-tuning Method**: LoRA (Low-Rank Adaptation)
-  - Rank (r): 16
-  - Alpha: 32
-  - Target Modules: Query, Key, Value projections, Output, Gate, Up/Down projections
-  - Dropout: 0.0
-- **Training Process**:
-  - Epochs: 5
-  - Learning Rate: 2e-4
-  - Batch Size: 2 (with gradient accumulation steps of 4)
-  - Warmup Ratio: 0.1
-  - Weight Decay: 0.01
-  - Gradient Clipping: 0.5
-  - Early Stopping: Patience of 3 epochs with 0.005 threshold
-  - Optimizer: AdamW (8-bit)
-  - Mixed Precision: bfloat16
+### Bias and Risks
 
-### Dataset
-The model is fine-tuned on carefully curated examples from the `friction-overthinking-v2` dataset that emphasize:
-- Natural thought progression with intentional friction points
-- Multi-perspective analysis through different agent roles
-- Integration of physical and mental markers
-- Unpredictable and non-linear reasoning patterns
-- Embrace of uncertainty and exploration
+The model:
+- May exhibit biases present in the training data
+- Could potentially reinforce overthinking in certain situations
+- Might challenge user assumptions in sensitive contexts
+- Should be used with appropriate content warnings
 
-### Input Format
-```
-<|im_start|>system
+## Usage
+
+Example usage with the Transformers library:
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Load model and tokenizer
+model_name = "leonvanbokhorst/deepseek-r1-mixture-of-friction"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+
+# Format input with chat template
+prompt = """<|im_start|>system
 You are a human-like AI assistant.
 <|im_end|>
 <|im_start|>user
-{question}
+Why do I keep procrastinating important tasks?
 <|im_end|>
-<|im_start|>assistant
-<think>
-{thought_stream}
-</think>
-{final_answer}
-<|im_end|>
+<|im_start|>assistant"""
+
+# Generate response
+inputs = tokenizer(prompt, return_tensors="pt")
+outputs = model.generate(
+    inputs["input_ids"],
+    max_length=512,
+    temperature=0.7,
+    top_p=0.9
+)
+response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 ```
 
-## Limitations & Biases
+## Training Details
 
-- **Intentional Slowness**: The model deliberately takes longer to respond
-- **Complexity in Simplicity**: Even simple queries receive detailed exploration
-- **Productive Discomfort**: Users seeking quick answers may feel initial friction
-- **Base Model Inheritance**: Carries forward inherent biases from the base model
-- **Digital Constraints**: While we aim for embodied interaction, we're still limited by the digital medium
-- **Resource Requirements**: Due to the model size and attention mechanism, requires significant computational resources
+### LoRA Configuration
+- **Rank**: 64
+- **Alpha**: 128
+- **Target Modules**: 
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
 
-## Example Usage
-
-Input:
-```
-Why do babies cry in different languages?
-```
-
-The response will demonstrate:
-- Thoughtful pauses and self-questioning
-- Multiple perspective exploration
-- Physical and mental engagement markers
-- Embrace of uncertainty
-- Deep, interconnected reasoning
-
-## About Friction-Based Reasoning
-
-This model represents a fundamental shift in AI interaction design. While most AI systems strive for frictionless experiences, we intentionally introduce resistance points that:
-
-1. Challenge the "death by convenience" of modern digital interactions
-2. Create space for human messiness and unpredictability
-3. Engage both mind and body in the reasoning process
-4. Value the journey of understanding over quick answers
-5. Foster genuine connection through shared exploration
-
-As stated in the Designing Friction manifesto: "Friction perceived as an obstacle might in fact be a possibility for connection."
+### Dataset Processing
+- Examples stacked up to 4096 tokens
+- 90/10 train/validation split
+- Consistent seed (42) for reproducibility
+- Token-based sampling for balanced training
 
 ## Citation
 
 If you use this model in your research, please cite:
-```
-@misc{deepseek-r1-overthinking,
+
+```bibtex
+@misc{friction-reasoning-2025,
   author = {Leon van Bokhorst},
-  title = {Deepseek-R1-Overthinking: A Friction-Based Reasoning Model},
-  year = {2024},
+  title = {Mixture of Friction: Fine-tuned Language Model for Productive Disagreement, Overthinking, and Hesitation},
+  year = {2025},
   publisher = {HuggingFace},
-  journal = {HuggingFace Hub},
-  howpublished = {\url{https://huggingface.co/leonvanbokhorst/deepseek-r1-overthinking}}
+  journal = {HuggingFace Model Hub},
+  howpublished = {\url{https://huggingface.co/leonvanbokhorst/deepseek-r1-mixture-of-friction}}
 }
 ```
 
 ## Acknowledgments
 
-This model's design philosophy is deeply inspired by the ["Designing Friction"](https://designingfriction.com) manifesto by Luna Maurer and Roel Wouters, which calls for reintroducing meaningful resistance into our digital interactions.
+- DeepSeek AI for the base model
+- Unsloth team for the optimization toolkit
+- HuggingFace for the model hosting and infrastructure 
