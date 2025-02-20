@@ -1,9 +1,8 @@
 """LiteLLM client implementation for agent reasoning."""
 
 import subprocess
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List, Tuple
-from litellm import acompletion, completion
+from typing import Dict, Optional, Any, List
+from litellm import acompletion
 from pydantic import BaseModel
 
 class LLMResponse(BaseModel):

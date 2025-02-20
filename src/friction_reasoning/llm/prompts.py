@@ -1,8 +1,7 @@
 """Prompt template handling for agent reasoning."""
 
-import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict
 
 def load_prompt_template(agent_type: str) -> str:
     """Load a prompt template for a specific agent type.
