@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import argparse
 
 from ..llm import LLMClient
-from ..demo import Agent, generate_agent_reasoning, synthesize_final_answer
+from ..agent_reasoning import Agent, generate_agent_reasoning, synthesize_final_answer
 from ..llm.base_prompts import (
     BASE_PROMPTS,
     EMOTIONS,

@@ -1,4 +1,9 @@
-"""Demo script for friction-based reasoning."""
+"""Core agent reasoning system for friction-based dialogue generation.
+
+This module implements a multi-agent reasoning system where each agent has a distinct
+personality and thought pattern. The agents work together to explore questions from
+different perspectives, deliberately incorporating cognitive friction and uncertainty.
+"""
 
 import random
 from typing import Dict, Any, List
@@ -92,7 +97,7 @@ async def generate_random_question(llm: LLMClient) -> str:
     return await llm.complete(prompt)
 
 async def main():
-    """Run the demo."""
+    """Run an example of the multi-agent reasoning system."""
     # Initialize LLM client
     llm = LLMClient(model="gpt-4o", temperature=0.7)
     
@@ -145,6 +150,7 @@ async def main():
 if __name__ == "__main__":
     import sys
     import os
+    import asyncio
     # Add the src directory to the Python path
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
     asyncio.run(main()) 
