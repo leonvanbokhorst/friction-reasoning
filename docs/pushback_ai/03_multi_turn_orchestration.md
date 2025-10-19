@@ -1,6 +1,6 @@
-# Phase 03 · Multi-Turn Orchestration
+# Phase 03 · Multi-Perspective Orchestration
 
-## Story Beat — Orchestrating the Relay
+## Story Beat — Choreographing the Secret Dojo
 
 With the prompt personas forged, Phase 03 choreographs how they pass the mic. The goal: keep disagreement compounding rather than resetting each turn. Every agent must hear what came before, react, and nudge the tension forward until a hesitant synthesis emerges.
 
@@ -171,6 +171,9 @@ Notice how each persona references the emotional cues left by the prior page of 
 - **Agents start ignoring each other**: inspect `previous_thoughts` construction; stray whitespace or encoding issues can break the context chain.
 - **Vulnerability injection feels repetitive**: expand `VULNERABILITY_CONFIG` phrases or decrease the injection probability slightly.
 - **Async gather crashes**: wrap the dataset generation CLI with `--max-retries` to avoid infinite loops when the upstream model is unstable.
+- **`previous_thoughts`** carries the transcript forward so each persona responds with full context.
+- **Vulnerability injection hook** spices each thought stream with additional uncertainty.
+- **Training note**: Later, the fine-tuning pipeline concatenates several of these sequential turns so the model practices holding context across multiple exchanges; the run-time prompt handoff here remains strictly persona-to-persona.
 
 ## Tying Back to Designing Friction
 
@@ -185,3 +188,5 @@ The [Designing Friction](https://designingfriction.com) manifesto celebrates dis
 ## Next Phase Preview
 
 Phase 04 zooms out from generation to distribution: how we package these multi-agent transcripts, craft dataset cards, and push everything to Hugging Face without losing the friction narrative. Jump to `04_hf_delivery.md` for the handoff.
+
+We also stitch consecutive conversations together so the fine-tuning samples contain several sequential turns; this stacking happens here in `generate_datapoint()` (and later in the training pipeline), not during the prompt-generation phase.

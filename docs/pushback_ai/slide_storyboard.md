@@ -42,7 +42,7 @@ Presentation target: 12–15 minute walkthrough of the Pushback-AI pipeline, tai
 
 ## Slide 7 — Phase 03: "Sequential Relay Orchestration"
 
-- **Purpose**: Explain context passing and multi-turn choreography.
+- **Purpose**: Explain context passing and multi-perspective handoff.
 - **Talking points**: `previous_thoughts` baton; per-turn temperature jitter; vulnerability injection hook.
 - **Visual cues**: Sequence diagram showing agents reading/writing transcript; highlight `generate_datapoint()` loop.
 

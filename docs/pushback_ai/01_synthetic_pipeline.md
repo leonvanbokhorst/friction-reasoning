@@ -151,7 +151,7 @@ Every moment, every experience has the potential to contribute to your growth an
 
 ## Lessons Learned
 
-- Friction emerges when personas hear each other; multi-turn context is non-negotiable.
+- Friction emerges when the six personas hear each other; the multi-PERSPECTIVE handoff is non-negotiable.
 - Random vulnerability injections keep transcripts from sounding overconfident.
 - Resumable batching saved hours when rate limits or network hiccups struck mid-run.
 

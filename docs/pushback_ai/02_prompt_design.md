@@ -192,7 +192,7 @@ The manifesto [Designing Friction](https://designingfriction.com) argues for del
 ## Implementation Checklist
 
 - Verify every persona has an up-to-date template in `src/friction_reasoning/llm/templates/`; missing files cause hard failures at runtime.
-- Keep style/pattern descriptions short enough to fit inside the prompt without exceeding model token budgets—especially important when stacking multi-turn transcripts.
+- Keep style/pattern descriptions short enough to fit inside the prompt without exceeding model token budgets—especially important once the fine-tuning pipeline stacks multiple turns together.
 - When adding new focus modes (e.g., "career coaching"), create template variants with the `focus_agentname.txt` naming scheme so `get_agent_prompt()` finds them automatically.
 - For quick manual QA, call `python -m friction_reasoning.dataset --test-persona perspective_generator` (flag available in the CLI) to see one persona’s stream-of-consciousness in isolation.
 
