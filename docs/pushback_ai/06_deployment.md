@@ -1,6 +1,6 @@
 # Phase 06 · Deployment & Sharing
 
-## Story Beat — Carrying the Pushback Torch Beyond the Dojo
+## Story Beat — Carrying Pushback Beyond Our Workspace
 
 With LoRA adapters trained (Phase 05), the final quest is delivering Pushback-AI in forms the wider community can actually run. Phase 06 covers merging adapters, producing GGUF artifacts, pushing them to Hugging Face, and packaging everything for Ollama. This is when the friction ethos leaves our workstation and lands in other people’s terminals.
 
@@ -75,11 +75,47 @@ for quant in quantizations:
 
 While Ollama packaging isn’t scripted in this repo, the typical pipeline after GGUF export is:
 
-1. Copy the GGUF file to your Ollama models directory.
-2. Write a `Modelfile` referencing the GGUF and describing metadata (name, parameters, template).
+1. Copy the GGUF file to your Ollama models directory (defaults to `~/.ollama/models`). A quick `cp model_training/model_gguf/q5_k_m/unsloth.Q5_K_M.gguf ~/.ollama/models/` does the trick.
+2. Write a `Modelfile` referencing the GGUF and describing metadata (name, parameters, template). Minimal example:
+
+   ```
+   FROM ./unsloth.Q5_K_M.gguf
+   PARAMETER num_ctx 4096
+   TEMPLATE """
+   {{ .System }}
+
+   {{ .Prompt }}
+   """
+   ```
+
 3. Run `ollama create pushback-ai -f Modelfile` to generate the local model.
-4. Share via `ollama run pushback-ai` or push to a community registry.
-   Emphasize during the talk: producing GGUF is the bridge that allows friction-trained behavior to run on laptops via Ollama.
+4. Test with `ollama run pushback-ai`. When it sounds like it belongs in the dojo, move on to distribution.
+
+### Publishing to the Ollama Library
+
+Getting the model into the shared Ollama registry takes a couple of extra beats:
+
+1. `ollama login` so the CLI can push under your namespace.
+2. Rename the model in the `Modelfile` (or during `ollama create`) to match `<username>/<model-name>`—e.g. `ollama create leonvanbokhorst/pushback-ai -f Modelfile`.
+3. Attach a concise `LICENSE` and `README` alongside the `Modelfile`; Ollama surfaces these in the library UI.
+4. Run `ollama push leonvanbokhorst/pushback-ai` to publish the artifact.
+5. Double-check the listing at https://ollama.ai/library to confirm metadata, downloadable size, and that the GGUF variant (e.g. Q5_K_M) shows up correctly.
+
+Emphasize during the talk: producing GGUF is the bridge that allows friction-trained behavior to run on laptops via Ollama—and pushing it upstream makes sparring partners discoverable outside the project walls.
+
+## Quickstart Checklist
+
+- Run `python -m friction_reasoning.model_training.convert_to_gguf --quant q5_k_m` after training to generate the merged GGUF.
+- Verify the artifact (`model_training/model_gguf/q5_k_m/unsloth.Q5_K_M.gguf`) before uploading—file corruption usually means llama.cpp build issues.
+- Upload to Hugging Face via `python -m friction_reasoning.model_training.push_to_hub --repo leonvanbokhorst/deepseek-r1-mixture-of-friction` to keep models and datasets together.
+- Craft your `Modelfile` and create an Ollama build; test with `ollama run pushback-ai` to confirm prompt templates still resonate.
+- Log the Hugging Face model URL and Ollama listing in the README so teammates can find the latest artifacts.
+
+## Troubleshooting Notes
+
+- **llama.cpp build failures**: rerun `setup_llama_cpp()` with a clean environment; outdated compilers are the usual culprit.
+- **Upload script missing files**: ensure the GGUF naming matches `unsloth.{quant}.gguf`; the script builds filenames dynamically.
+- **Ollama runs out of memory**: drop to a smaller quant (`q4_0`) or prune template defaults to reduce prompt tokens.
 
 ## Lessons Learned
 
@@ -93,4 +129,4 @@ Tie back to [Designing Friction](https://designingfriction.com): distribution is
 
 ## Closing the Journey
 
-With Phase 06 complete, the Pushback-AI saga covers the full hero’s arc—from intentionally designing disagreement to sharing a runnable model that keeps asking uncomfortable questions. Encourage the audience to run the Ollama build, explore the dataset, and contribute new friction personas.
+With Phase 06 complete, the Pushback-AI saga covers the full arc—from intentionally designing disagreement to sharing a runnable model that keeps asking uncomfortable questions. Encourage the audience to run the Ollama build, explore the dataset, and contribute new friction personas.

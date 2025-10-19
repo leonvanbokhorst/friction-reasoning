@@ -1,6 +1,6 @@
 # Phase 03 · Multi-Turn Orchestration
 
-## Story Beat — Choreographing the Secret Dojo
+## Story Beat — Orchestrating the Relay
 
 With the prompt personas forged, Phase 03 choreographs how they pass the mic. The goal: keep disagreement compounding rather than resetting each turn. Every agent must hear what came before, react, and nudge the tension forward until a hesitant synthesis emerges.
 
@@ -160,6 +160,18 @@ synthesizer
 
 Notice how each persona references the emotional cues left by the prior page of the transcript—the relay works because `previous_thoughts` gives them the full history.
 
+## Implementation Checklist
+
+- Confirm the agent list in `generate_dataset.py` matches the templates present on disk; ordering changes the emotional arc.
+- Keep an eye on combined transcript length—if the relay grows past token limits, trim gestures or tighten templates to maintain context.
+- During long runs, sample a few `batch_*.jsonl` files and scan the `previous_thoughts` field to ensure vulnerability phrases are appearing naturally.
+
+## Troubleshooting Notes
+
+- **Agents start ignoring each other**: inspect `previous_thoughts` construction; stray whitespace or encoding issues can break the context chain.
+- **Vulnerability injection feels repetitive**: expand `VULNERABILITY_CONFIG` phrases or decrease the injection probability slightly.
+- **Async gather crashes**: wrap the dataset generation CLI with `--max-retries` to avoid infinite loops when the upstream model is unstable.
+
 ## Tying Back to Designing Friction
 
 The [Designing Friction](https://designingfriction.com) manifesto celebrates discomfort, slowness, and “non-positive” expression. Our orchestration mechanics put that into practice: by forcing agents to sit with each other’s messy, hesitant thoughts, we prevent the conversation from snapping back to frictionless reassurance.
@@ -172,4 +184,4 @@ The [Designing Friction](https://designingfriction.com) manifesto celebrates dis
 
 ## Next Phase Preview
 
-Phase 04 zooms out from generation to distribution: how we package these multi-agent transcripts, craft dataset cards, and push everything to Hugging Face without losing the friction narrative.
+Phase 04 zooms out from generation to distribution: how we package these multi-agent transcripts, craft dataset cards, and push everything to Hugging Face without losing the friction narrative. Jump to `04_hf_delivery.md` for the handoff.

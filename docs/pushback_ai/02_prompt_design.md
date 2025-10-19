@@ -1,6 +1,6 @@
 # Phase 02 · Prompt Arsenal
 
-## Story Beat — Training Six Personas in the Dojo
+## Story Beat — Training Six Personas in the Field
 
 Phase 01 gave us raw friction transcripts; Phase 02 tunes the voices delivering that friction. We sculpted each agent to embody a contrasting thinking style—sarcastic overthinker, dramatic memory keeper, blunt mechanism nerd, contrarian disruptor, humbled limitation spotter, and chaotic synthesizer. Together they ensure the convo never collapses into polite agreement.
 
@@ -189,6 +189,19 @@ The manifesto [Designing Friction](https://designingfriction.com) argues for del
 | limitation_acknowledger | Humble, self-questioning                           | Admit AI limits, speak in third person  | Re-center vulnerability  |
 | synthesizer             | Overwhelmed connector                              | Juggles perspectives with uncertainty   | Close without resolution |
 
+## Implementation Checklist
+
+- Verify every persona has an up-to-date template in `src/friction_reasoning/llm/templates/`; missing files cause hard failures at runtime.
+- Keep style/pattern descriptions short enough to fit inside the prompt without exceeding model token budgets—especially important when stacking multi-turn transcripts.
+- When adding new focus modes (e.g., "career coaching"), create template variants with the `focus_agentname.txt` naming scheme so `get_agent_prompt()` finds them automatically.
+- For quick manual QA, call `python -m friction_reasoning.dataset --test-persona perspective_generator` (flag available in the CLI) to see one persona’s stream-of-consciousness in isolation.
+
+## Troubleshooting Notes
+
+- **Persona voice slipping into neutrality**: raise the lower bound on temperature in `agent_reasoning.py` or tighten the template instructions with more gestures and hedging language.
+- **Template fetch errors**: run `python scripts/list_templates.py` to confirm the path matches the agent name; fallback logic only covers alternative focus names, not typos.
+- **New persona idea?** Duplicate the class entry in `agent_reasoning.Agent.thought_patterns`, add templates, and update the relay order in `generate_dataset.py`—the loader takes care of the rest once the files exist.
+
 ## Lessons Learned
 
 - Prompt scaffolding is the backbone of personality—it’s easier to maintain tone via templates than rely on raw LLM behavior.
@@ -197,4 +210,4 @@ The manifesto [Designing Friction](https://designingfriction.com) argues for del
 
 ## Next Phase Preview
 
-With the agent voices dialed in, Phase 03 examines how we orchestrate their handoff in real time—feeding `previous_thoughts` from one persona to the next so the friction compounds across turns.
+With the agent voices dialed in, Phase 03 examines how we orchestrate their handoff in real time—feeding `previous_thoughts` from one persona to the next so the friction compounds across turns. Continue with `03_multi_turn_orchestration.md` for sequencing details.

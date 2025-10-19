@@ -2,7 +2,7 @@
 
 ## Story Beat — Feeding the Model a Friction Diet
 
-After collecting and publishing the disagreement-focused dataset, we marched into the training dojo. Goal: infuse DeepSeek-R1 with the multi-agent disagreement voice without overbaking agreement. Phase 05 is about preparing balanced batches from `friction-disagreement-v2`, configuring LoRA adapters, and monitoring training signals so the model internalizes argument, vulnerability, and hesitation.
+After collecting and publishing the disagreement-focused dataset, we rolled straight into training. Goal: infuse DeepSeek-R1 with the multi-agent disagreement voice without overbaking agreement. Phase 05 is about preparing balanced batches from `friction-disagreement-v2`, configuring LoRA adapters, and monitoring training signals so the model internalizes argument, vulnerability, and hesitation.
 
 ## Configuration Scroll
 
@@ -147,6 +147,14 @@ while True:
 
 Tell the audience: we validated the model’s disagreement tone live before shipping it downstream.
 
+## Quickstart Checklist
+
+- Install CUDA dependencies (or set `PYTORCH_ENABLE_MPS_FALLBACK=1` on Apple Silicon) before launching training.
+- Run a dry configuration check: `python -m friction_reasoning.model_training.train --config src/friction_reasoning/model_training/config.yaml --dry-run`.
+- Kick off training with `python -m friction_reasoning.model_training.train --config ... --run-name disagreement-v2-lora`.
+- Watch the console or W&B dashboard for spikes in loss; if it plateaus too early, lower `gradient_accumulation_steps` or tweak learning rate.
+- After training, reload the adapter via `python -m friction_reasoning.model_training.test_model --adapter-path models/friction_reasoning/lora_model` to sanity check tone.
+
 ## Outputs & Artifacts
 
 | Path                                    | Description                                  |
@@ -154,6 +162,12 @@ Tell the audience: we validated the model’s disagreement tone live before ship
 | `models/friction_reasoning/lora_model/` | Saved LoRA weights + tokenizer               |
 | `logs/friction_reasoning/`              | Training logs (for W&B or manual inspection) |
 | `model_training/test_model.py`          | Post-training evaluation harness             |
+
+## Troubleshooting Notes
+
+- **VRAM crashes mid-run**: reduce `per_device_train_batch_size` to 1 or enable gradient checkpointing in the config.
+- **Adapter feels too combative**: mix in a lighter dataset and adjust weighting, or drop total epochs and rerun.
+- **Response-only training errors**: confirm your tokenizer has `bos_token`/`eos_token` defined; missing tokens lead to misaligned labels.
 
 ## Lessons Learned
 
@@ -163,4 +177,4 @@ Tell the audience: we validated the model’s disagreement tone live before ship
 
 ## Next Phase Preview
 
-Phase 06 wraps the journey: merging adapters into full GGUF builds, quantizing for edge devices, and publishing the final Pushback-AI model to both Hugging Face and Ollama.
+Phase 06 wraps the journey: merging adapters into full GGUF builds, quantizing for edge devices, and publishing the final Pushback-AI model to both Hugging Face and Ollama. Dive into `06_deployment.md` next.

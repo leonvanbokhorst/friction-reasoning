@@ -96,6 +96,14 @@ async def test_generation():
 - Run via `python -m friction_reasoning.dataset --test` to demo the agent voices live.
 - Use during talks to show the raw thought streams before training.
 
+## Quickstart Checklist
+
+- Create (or refresh) an `.env` with the right API keys before running anything.
+- Kick off a smoke test: `python -m friction_reasoning.dataset --test`.
+- Launch a full batch with `python -m friction_reasoning.dataset --generate --num-examples 500` (tune the count to fit rate limits).
+- Watch the progress bar—if it stalls, check `logs/dataset.log` for retry reasons.
+- Inspect the latest `data/friction_reasoning/batch_*.jsonl` file to confirm tone, gestures, and hesitation markers look right.
+
 ## Data Artifacts
 
 | File                                                       | Description                                      |
@@ -135,6 +143,12 @@ You’re romanticizing what could have been, but that alternate life may not hav
 Every moment, every experience has the potential to contribute to your growth and fulfillment. By fixating on an idealized version of a life you didn’t choose, you could be overlooking the unique joys and lessons that your present circumstances have to offer. Embracing where you are now might just lead to unexpected happiness and growth that far exceeds what you imagine could have been by the beach.
 ```
 
+## Troubleshooting Notes
+
+- **Rate limits or 429s**: reruns are safe because `seen_ids` blocks duplicates; worst case delete the half-written `batch_x.jsonl` and regenerate.
+- **Overconfident tone creeping in**: adjust `VULNERABILITY_CONFIG` in `generate_dataset.py` or raise the per-agent temperature range before relaunching.
+- **JSONL parsing errors downstream**: run `python scripts/check_jsonl.py data/friction_reasoning/batch_*.jsonl` (included in the repo) to catch stray quotation marks or encoding issues early.
+
 ## Lessons Learned
 
 - Friction emerges when personas hear each other; multi-turn context is non-negotiable.
@@ -143,4 +157,4 @@ Every moment, every experience has the potential to contribute to your growth an
 
 ## Next Phase Preview
 
-With the synthetic pipeline humming, we turned to sculpting each agent’s voice—dialing sarcasm, drama, and contrarian energy through prompt templates.
+With the synthetic pipeline humming, we turned to sculpting each agent’s voice—dialing sarcasm, drama, and contrarian energy through prompt templates. Head to `02_prompt_design.md` for the persona prompt playbook.

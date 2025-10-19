@@ -1,8 +1,8 @@
 # Phase 04 · Hugging Face Relay
 
-## Story Beat — Carrying the Friction Back to the Village
+## Story Beat — Shipping Friction to the Community
 
-By this point the dojo is producing rich, multi-agent transcripts. Phase 04 is the return journey: packaging those dialogues, documenting their flavor, and delivering them to the community via Hugging Face. The tale isn’t just “we uploaded a file”—it’s about preserving tension, vulnerability, and uncertainty in a shareable format while honoring platform expectations.
+By this point the pipeline is producing rich, multi-agent transcripts. Phase 04 is the return journey: packaging those dialogues, documenting their flavor, and delivering them to the community via Hugging Face. The tale isn’t just “we uploaded a file”—it’s about preserving tension, vulnerability, and uncertainty in a shareable format while honoring platform expectations.
 
 ## Environment & Secrets Checklist
 
@@ -86,12 +86,26 @@ Key steps we can narrate:
 
 Running the upload script peppers the console with human-friendly messages: number of examples loaded, dataset card upload status, final URL. Perfect material for talk screenshots.
 
+## Quickstart Checklist
+
+- Refresh your `.env` to include `HUGGINGFACE_API_KEY` before running any upload commands.
+- Preview the dataset card output with `python -m friction_reasoning.dataset.upload --preview-card` to confirm tone and formatting.
+- Run the upload script with `python -m friction_reasoning.dataset.upload --repo-id leonvanbokhorst/friction-disagreement-v2 --private False` (adjust flags for new datasets or staging runs).
+- After upload, visit the Hugging Face repo page and skim the rendered README to ensure tables, links, and bullet lists look correct.
+- Tag the release on the Hugging Face UI so collaborators get notified.
+
 ## Data Path Recap
 
 | Source                                                     | Description                        |
 | ---------------------------------------------------------- | ---------------------------------- |
 | `data/friction_reasoning/friction_reasoning_dataset.jsonl` | Combined dataset (Phase 01 output) |
 | `src/friction_reasoning/dataset/upload.py`                 | Upload orchestrator                |
+
+## Troubleshooting Notes
+
+- **Missing token errors**: double-check both the project `.env` and your shell session; the script intentionally halts rather than attempting an anonymous upload.
+- **README formatting glitches**: inspect the generated Markdown for triple backticks or tables that might need escaping; rerun with the `--dry-run` flag to iterate quickly.
+- **Dataset push timeouts**: Hugging Face SDK retries automatically, but you can split a massive dataset across multiple pushes by chunking the JSONL ahead of time.
 
 ## Storytelling Angle
 
@@ -107,4 +121,4 @@ Running the upload script peppers the console with human-friendly messages: numb
 
 ## Next Phase Preview
 
-Phase 05 dives into training: how we mix these datasets, stack examples into longer conversations, and fine-tune DeepSeek-R1 with LoRA while keeping the pushback spirit alive.
+Phase 05 dives into training: how we mix these datasets, stack examples into longer conversations, and fine-tune DeepSeek-R1 with LoRA while keeping the pushback spirit alive. Continue with `05_finetuning.md` for the training deep dive.
