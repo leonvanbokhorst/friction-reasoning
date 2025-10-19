@@ -65,7 +65,7 @@ split_dataset = stacked_dataset.train_test_split(test_size=0.1, seed=42)
 ```
 
 - Formatting path now only sees disagreement-style records, but the helper still works if we add other flavors later.
-- Examples are stacked into 4K-token windows so the model sees multi-turn compilations, not isolated snippets.
+- We stack four single-turn conversations into longer training samples so the model practices carrying context across consecutive exchanges.
 - Train/validation split ensures evaluation without leaking test prompts.
 
 ### Formatting Helpers
