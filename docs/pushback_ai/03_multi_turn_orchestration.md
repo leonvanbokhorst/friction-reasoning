@@ -1,6 +1,7 @@
 # Phase 03 · Multi-Perspective Orchestration
 
 ## Story Beat — Choreographing the Secret Dojo
+
 With the prompt personas forged, Phase 03 choreographs how they pass the mic. The goal: keep disagreement compounding rather than resetting each turn. Every agent must hear what came before, react, and nudge the tension forward until a hesitant synthesis emerges.
 
 ## Sequential Relay Mechanics
