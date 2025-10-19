@@ -1,191 +1,130 @@
-# 🤔 Friction Reasoning Dataset Generator
+# Pushback-AI
 
-Generate a dataset of multi-agent reasoning dialogues that deliberately incorporate cognitive friction, uncertainty, and emotional resonance. This project uses multiple AI agents with distinct personalities to explore questions from different angles, creating rich, human-like thought processes.
+End-to-end friction lab for disagreement-driven AI: synthetic dialogue generation, persona orchestration, dataset management, fine-tuning, GGUF export, and deployment automation.
 
-## 🌟 Features
+---
 
-- **Multi-Agent System**: 6 unique agents with distinct personalities:
-  - 🤨 Problem Framer (skeptical overthinker)
-  - 💭 Memory Activator (emotional, dramatic)
-  - 🔍 Mechanism Explorer (technical, detailed)
-  - 🎭 Perspective Generator (contrarian, challenging)
-  - 🤷 Limitation Acknowledger (humble, uncertain)
-  - 🎯 Synthesizer (chaotic connector)
+## Overview
 
-- **Emotional Intelligence**:
-  - Generates emotionally resonant questions
-  - Incorporates vulnerability and uncertainty
-  - Mimics human thought patterns
-  - Uses casual, relatable language
+Pushback-AI orchestrates six contrasting agent personas to manufacture productive disagreement. The toolkit covers the full lifecycle: synthetic dialogue generation, dataset packaging, fine-tuning (LoRA + DeepSeek-R1), GGUF conversion, and distribution via Hugging Face and Ollama.
 
-- **Dataset Generation**:
-  - Configurable batch generation
-  - Progress tracking and statistics
-  - Automatic HuggingFace upload
-  - JSONL format for easy processing
+> **Platform note**
+> The end-to-end workflow (generation → training → export) is tested on **Windows 11 WSL2** with Python 3.10–3.12. macOS builds may require alternative GPU backends (e.g., replacing `bitsandbytes`).
 
-## 🚀 Quick Start
+---
+
+## Key Capabilities
+
+- **Disagreement-first dataset synthesis** powered by six agent personas (skeptical, memory-rich, mechanical, contrarian, humble, synthesizer).
+- **Prompt templating system** that enforces gestures, hesitation, and persona tone.
+- **LoRA fine-tuning pipeline** targeting DeepSeek-R1 distilled models using Unsloth.
+- **Deployment tooling** for GGUF export and Hugging Face/Ollama publication.
+
+
+---
+
+## Documentation Hub
+
+| Phase | Description                        | Link                                                                                                 |
+| ----- | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 01    | Synthetic dataset pipeline         | [`docs/pushback_ai/01_synthetic_pipeline.md`](docs/pushback_ai/01_synthetic_pipeline.md)             |
+| 02    | Prompt arsenal & persona templates | [`docs/pushback_ai/02_prompt_design.md`](docs/pushback_ai/02_prompt_design.md)                       |
+| 03    | Multi-turn orchestration           | [`docs/pushback_ai/03_multi_turn_orchestration.md`](docs/pushback_ai/03_multi_turn_orchestration.md) |
+| 04    | Hugging Face delivery workflow     | [`docs/pushback_ai/04_hf_delivery.md`](docs/pushback_ai/04_hf_delivery.md)                           |
+| 05    | Disagreement-only fine-tuning      | [`docs/pushback_ai/05_finetuning.md`](docs/pushback_ai/05_finetuning.md)                             |
+| 06    | GGUF creation & Ollama release     | [`docs/pushback_ai/06_deployment.md`](docs/pushback_ai/06_deployment.md)                             |
+
+Additional references:
+
+- Thinking patterns & persona guidance: [`docs/thinking-pattern.md`](docs/thinking-pattern.md)
+
+---
+
+## Project Layout
+
+```
+friction-reasoning/
+├── src/friction_reasoning/
+│   ├── dataset/        # Generation, batching, HF upload scripts
+│   ├── llm/            # Prompt templates, LiteLLM client
+│   ├── agents/         # Persona base classes
+│   └── model_training/ # Unsloth training, GGUF export, HF push scripts
+├── docs/pushback_ai/   # Phase docs (01–06)
+├── README.md           # This file
+└── pyproject.toml      # Project + dependency metadata
+```
+
+---
+
+## Getting Started
 
 ```bash
-# Clone the repository
+# Clone
 git clone https://github.com/leonvanbokhorst/friction-reasoning-data-gen.git
 cd friction-reasoning-data-gen
 
-# Install dependencies
-pip install -r requirements.txt
+# Install (creates .venv with uv)
+uv sync
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your API keys
-
-# Generate a test dataset (3 examples)
-python -m friction_reasoning.dataset --test
-
-# Generate full dataset
-python -m friction_reasoning.dataset --num_examples 1200
+# Activate
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows / WSL
 ```
 
-## 📊 Generated Data Format
+### Environment variables
 
-Each example in the dataset looks like this:
-
-```json
-{
-    "id": "unique_id",
-    "question": "Why do we keep dancing around this thing where...",
-    "agent_responses": [
-        {
-            "agent_type": "problem_framer",
-            "thought_stream": "Hmm *fidgets nervously* isn't it weird how..."
-        },
-        // ... more agent responses
-    ],
-    "final_answer": "Maybe we're all just trying to...",
-    "metadata": {
-        "timestamp": "2024-03-XX",
-        "model": "model_name"
-    }
-}
-```
-
-## 🗂️ Project Structure
-
-```bash
-friction-reasoning-data-gen/
-├── src/
-│   └── friction_reasoning/
-│       ├── agent_reasoning/    # Core agent system
-│       ├── dataset/           # Dataset generation
-│       ├── llm/              # LLM interaction
-│       └── model_training/   # Model training tools
-├── data/                    # Generated datasets
-├── tests/                  # Test suite
-└── examples/              # Usage examples
-```
-
-## 📚 Documentation
-
-- [Dataset Generation Guide](src/friction_reasoning/dataset/README.md)
-- [Model Training Guide](src/friction_reasoning/model_training/README.md)
-- [Agent System Documentation](docs/agents.md)
-
-## 🛠️ Development
-
-### Prerequisites
-
-- Python 3.8+
-- OpenAI API key (or compatible LLM API)
-- HuggingFace account (for dataset upload)
-- 16GB+ RAM recommended
-
-### Setup for Development
-
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest tests/
-
-# Run linting
-flake8 src/
-```
-
-## 🎯 Use Cases
-
-1. **Training Data Generation**
-   - Create datasets for training emotional intelligence
-   - Generate examples of productive uncertainty
-   - Build friction-aware dialogue systems
-
-2. **Research**
-   - Study multi-agent interactions
-   - Analyze patterns in human-like reasoning
-   - Explore cognitive friction points
-
-3. **Education**
-   - Demonstrate different thinking styles
-   - Practice emotional awareness
-   - Learn about cognitive biases
-
-## 🤝 Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 Configuration
-
-Key configuration files:
-- `.env`: Environment variables and API keys
-- `config.yaml`: Generation settings
-- `pyproject.toml`: Project metadata and dependencies
-
-## 🐛 Troubleshooting
-
-Common issues and solutions:
-
-1. **API Rate Limits**
-   ```bash
-   # Use batch processing with delays
-   python -m friction_reasoning.dataset --batch_size 10 --delay 1
-   ```
-
-2. **Memory Usage**
-   ```bash
-   # Reduce parallel processing
-   python -m friction_reasoning.dataset --workers 2
-   ```
-
-3. **Dataset Quality**
-   ```bash
-   # Run analysis tools
-   python -m friction_reasoning.dataset.analyze --check-quality
-   ```
-
-## 📜 License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
-
-## 🙏 Acknowledgments
-
-- OpenAI for the base LLM technology
-- HuggingFace for dataset hosting
-- The amazing open-source community
-
-## 📫 Contact
-
-- GitHub Issues: For bugs and features
-- Discussions: For questions and ideas
-- Email: your.email@example.com
+Duplicate `.env.example` → `.env`, then provide the required API tokens (e.g., OpenAI/LiteLLM, Hugging Face).
 
 ---
-Made with 🧠 and ❤️ by the Friction Reasoning team 
+
+## Core Workflows
+
+### 1. Generate disagreement dataset
+
+```bash
+uv run python -m friction_reasoning.dataset --num_examples 3 --batch_size 3
+```
+
+Outputs staged JSONL batches under `data/friction_reasoning/` and a consolidated dataset file.
+
+### 2. Upload to Hugging Face
+
+```bash
+uv run python -m friction_reasoning.dataset.upload \
+  --dataset_path data/friction_reasoning/friction_reasoning_dataset.jsonl \
+  --repo_id leonvanbokhorst/friction-disagreement-v2
+```
+
+For details, see Phase 04 documentation.
+
+### 3. Fine-tune DeepSeek-R1 (disagreement corpus)
+
+```bash
+uv run python src/friction_reasoning/model_training/train.py
+```
+
+Configuration lives in `src/friction_reasoning/model_training/config.yaml` (Phase 05).
+
+### 4. Convert to GGUF & publish
+
+```bash
+uv run python src/friction_reasoning/model_training/convert_to_gguf.py
+uv run python src/friction_reasoning/model_training/push_to_hub.py \
+  --hub_repo leonvanbokhorst/deepseek-r1-disagreement
+```
+
+See Phase 06 for Ollama packaging guidance.
+
+---
+
+## Contributing
+
+1. Fork & branch (`git checkout -b feature/pushback-upgrade`)
+2. Sync dependencies (`uv sync`)
+3. Run tests / linters (`pytest`, `pylint`, `mypy`, `black`)
+4. Open a PR referencing the relevant phase documentation.
+
+For bug reports or feature requests, file an issue on GitHub.
+
+---
+
+Made with 🧠 and ❤️ by the Pushback-AI team.
