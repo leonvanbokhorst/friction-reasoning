@@ -33,6 +33,7 @@ Pushback-AI orchestrates six contrasting agent personas to manufacture productiv
 | 04    | Hugging Face delivery workflow     | [`docs/pushback_ai/04_hf_delivery.md`](docs/pushback_ai/04_hf_delivery.md)                           |
 | 05    | Disagreement-only fine-tuning      | [`docs/pushback_ai/05_finetuning.md`](docs/pushback_ai/05_finetuning.md)                             |
 | 06    | GGUF creation & Ollama release     | [`docs/pushback_ai/06_deployment.md`](docs/pushback_ai/06_deployment.md)                             |
+| 07    | Benchmarking & evaluation results | [`docs/pushback_ai/07_benchmarking.md`](docs/pushback_ai/07_benchmarking.md)                         |
 
 Additional references:
 
@@ -113,6 +114,11 @@ uv run python src/friction_reasoning/model_training/push_to_hub.py \
 ```
 
 See Phase 06 for Ollama packaging guidance.
+
+### 5. Benchmark the tuned model
+- Sample evaluation prompts from your dataset or `data/eval/prompts_disagreement.jsonl` (create if needed).
+- Compare baseline vs fine-tuned outputs using the checklist in Phase 07.
+- Log hedging, gestures, and explicit pushback to confirm improvements.
 
 ---
 
